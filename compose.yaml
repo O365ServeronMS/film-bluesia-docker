@@ -1,0 +1,31 @@
+services:
+  bluesia-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bluesia-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      OPHIM_BASE_URL: "https://ophim1.com"
+      BLUESIA_CACHE_DIR: "/cache/bluesia"
+      BLUESIA_CACHE_MAX_BYTES: "8589934592"
+      BLUESIA_IMAGE_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_DETAIL_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_TAXONOMY_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_LIST_CACHE_TTL_SECONDS: "300"
+      BLUESIA_SEARCH_CACHE_TTL_SECONDS: "1800"
+    ports:
+      - "127.0.0.1:3030:3000"
+    volumes:
+      - bluesia_cache:/cache
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  bluesia_cache:

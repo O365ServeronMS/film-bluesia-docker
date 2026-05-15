@@ -1,7 +1,7 @@
-{
-  "name": "film.bluesia.net",
-  "short_name": "film.bluesia.net",
-  "description": "Góc nhỏ của người mê phim",
+﻿{
+  "name": "Bluesia Cinema",
+  "short_name": "Bluesia",
+  "description": "Góc nhỏ của người đam mê phim",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07090f",

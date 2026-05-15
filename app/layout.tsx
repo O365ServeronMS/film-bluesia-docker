@@ -5,13 +5,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://film.bluesia.net"),
-  title: "film.bluesia.net",
-  description: "Góc nhỏ của người mê phim",
-  applicationName: "film.bluesia.net",
+  title: "Bluesia Cinema",
+  description: "Góc nhỏ của người đam mê phim",
+  applicationName: "Bluesia Cinema",
   openGraph: {
-    title: "film.bluesia.net",
-    description: "Góc nhỏ của người mê phim",
-    siteName: "film.bluesia.net",
+    title: "Bluesia Cinema",
+    description: "Góc nhỏ của người đam mê phim",
+    siteName: "Bluesia Cinema",
     type: "website",
     locale: "vi_VN",
     images: [
@@ -19,14 +19,14 @@ export const metadata: Metadata = {
         url: "/icon-512.png",
         width: 512,
         height: 512,
-        alt: "film.bluesia.net"
+        alt: "Bluesia Cinema"
       }
     ]
   },
   twitter: {
     card: "summary",
-    title: "film.bluesia.net",
-    description: "Góc nhỏ của người mê phim",
+    title: "Bluesia Cinema",
+    description: "Góc nhỏ của người đam mê phim",
     images: ["/icon-512.png"]
   },
   icons: {
@@ -61,4 +61,3 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-

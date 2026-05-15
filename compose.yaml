@@ -1,3 +1,5 @@
+name: filmbluesianet
+
 services:
   film-bluesia-net-app:
     build:

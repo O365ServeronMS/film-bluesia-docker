@@ -1,11 +1,15 @@
+# syntax=docker/dockerfile:1
 FROM node:20-alpine AS deps
 WORKDIR /app
+ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV npm_config_registry=https://registry.npmjs.org/
 COPY package*.json ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm ci --include=dev --no-audit --no-fund
 
 FROM node:20-alpine AS builder
 WORKDIR /app
+ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

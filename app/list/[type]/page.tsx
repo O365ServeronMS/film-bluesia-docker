@@ -75,7 +75,7 @@ export default async function ListPage({ params, searchParams }: Props) {
         <section className="space-y-3 px-4 pt-4">
           {supportsCountryFilter ? (
             <div aria-label="Lọc nhanh theo quốc gia">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Quốc gia</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Quốc gia</p>
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <Link
                   href={listHref(params.type, 1, { ...activeFilters, country: "" })}
@@ -98,7 +98,7 @@ export default async function ListPage({ params, searchParams }: Props) {
 
           {supportsCategoryFilter ? (
             <div aria-label="Lọc nhanh theo nhóm phim">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Nhóm phim</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Nhóm phim</p>
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <Link
                   href={listHref(params.type, 1, { ...activeFilters, category: "" })}

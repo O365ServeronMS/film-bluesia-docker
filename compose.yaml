@@ -1,0 +1,67 @@
+name: filmbluesianet
+services:
+  bluesia-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: film-bluesia-net:3.0.8
+    container_name: bluesia-app
+    restart: unless-stopped
+    mem_limit: 3g
+    cpus: "2.0"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      OPHIM_BASE_URL: https://ophim1.com
+      BLUESIA_CACHE_DIR: /cache/bluesia
+      BLUESIA_CACHE_MAX_BYTES: "8589934592"
+      BLUESIA_IMAGE_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_IMAGE_WEBP_QUALITY: "70"
+      BLUESIA_IMAGE_MAX_WIDTH: "720"
+      BLUESIA_DETAIL_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_TAXONOMY_CACHE_TTL_SECONDS: "1296000"
+      BLUESIA_LIST_CACHE_TTL_SECONDS: "1800"
+      BLUESIA_SEARCH_CACHE_TTL_SECONDS: "1800"
+      BLUESIA_CACHE_WARMUP_TYPES: phim-le,phim-bo
+      BLUESIA_CACHE_WARMUP_PAGES: "10"
+      BLUESIA_CACHE_WARMUP_LIMIT: "30"
+      BLUESIA_CACHE_WARMUP_IMAGE_CONCURRENCY: "6"
+      BLUESIA_CACHE_WARMUP_HTML: "1"
+      BLUESIA_CACHE_WARMUP_HTML_CONCURRENCY: "2"
+    ports:
+      - 127.0.0.1:3030:3000
+    volumes:
+      - bluesia_cache:/cache
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -qO-
+        - http://127.0.0.1:3000/
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+  bluesia-cache-warmer:
+    image: film-bluesia-net:3.0.8
+    container_name: bluesia-cache-warmer
+    restart: unless-stopped
+    depends_on:
+      bluesia-app:
+        condition: service_healthy
+    environment:
+      WARMUP_URL: http://bluesia-app:3000/api/cache/warmup
+      WARMUP_INTERVAL_SECONDS: "1800"
+    command: |
+      sh -lc '
+        echo "[bluesia-cache-warmer] warmup service started";
+        while true; do
+          date;
+          wget -qO- "$$WARMUP_URL" || true;
+          echo;
+          sleep "$$WARMUP_INTERVAL_SECONDS";
+        done
+      '
+volumes:
+  bluesia_cache: null
+networks: {}

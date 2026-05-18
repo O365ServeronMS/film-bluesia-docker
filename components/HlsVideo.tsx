@@ -50,16 +50,40 @@ export function HlsVideo({ src, poster }: { src: string; poster?: string }) {
           }
         },
       },
+      settings: [
+        {
+          html: 'Tải phụ đề (.srt, .vtt)',
+          tooltip: 'Chọn file',
+          icon: '<svg style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="#fff" d="M20,4H4C2.89,4 2,4.89 2,6V18C2,19.11 2.89,20 4,20H20C21.11,20 22,19.11 22,18V6C22,4.89 21.11,4 20,4M4,18V6H20V18H4M6,10H8V12H6V10M14,10H18V12H14V10M16,14H18V16H16V14M6,14H14V16H6V14Z" /></svg>',
+          selector: [
+            {
+              html: 'Chọn file từ máy...',
+              tooltip: '',
+            }
+          ],
+          onSelect: function (item) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.srt,.vtt,.ass';
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (!file) return;
+              const url = URL.createObjectURL(file);
+              art.subtitle.url = url;
+              art.notice.show = `Đã tải lên: ${file.name}`;
+            };
+            input.click();
+            return false;
+          },
+        },
+      ],
       controls: [
         {
           position: 'right',
-          html: 'Upload Subs',
+          html: '<svg style="width:24px;height:24px;margin-top:2px" viewBox="0 0 24 24"><path fill="#ffd22e" d="M20,4H4C2.89,4 2,4.89 2,6V18C2,19.11 2.89,20 4,20H20C21.11,20 22,19.11 22,18V6C22,4.89 21.11,4 20,4M4,18V6H20V18H4M6,10H8V12H6V10M14,10H18V12H14V10M16,14H18V16H16V14M6,14H14V16H6V14Z" /></svg>',
           tooltip: 'Tải phụ đề cục bộ',
           style: {
             marginRight: '10px',
-            fontSize: '13px',
-            fontWeight: 'bold',
-            color: '#ffd22e',
             cursor: 'pointer'
           },
           click: function () {

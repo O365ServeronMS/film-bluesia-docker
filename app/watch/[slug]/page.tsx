@@ -80,10 +80,10 @@ export default async function WatchPage(props: Props) {
       </header>
 
       <section className="aspect-video w-full bg-black">
-        {embed ? (
-          <iframe src={embed} title={`${movie.name} - ${episode?.name || "Tập phim"}`} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full border-0" />
-        ) : m3u8 ? (
+        {m3u8 ? (
           <HlsVideo src={m3u8} poster={movie.thumb || movie.poster} />
+        ) : embed ? (
+          <iframe src={embed} title={`${movie.name} - ${episode?.name || "Tập phim"}`} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full border-0" />
         ) : (
           <div className="grid h-full place-items-center p-6 text-center text-sm text-zinc-400">Không có link xem cho tập này.</div>
         )}

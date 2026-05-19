@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, ListVideo } from "lucide-react";
 import { HlsVideo } from "@/components/HlsVideo";
@@ -8,7 +9,42 @@ import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 
 export const revalidate = 300;
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string; player?: string; mirror?: string }> };
+
+const vidsrcHosts = new Set(["vidsrc-embed.ru", "vidsrc-embed.su", "vidsrcme.su", "vsrc.su"]);
+
+function isMobileUserAgent(userAgent: string) {
+  return /android|iphone|ipad|ipod|mobile|iemobile|opera mini|webos/i.test(userAgent);
+}
+
+function mobileVidsrcHost() {
+  const host = String(process.env.VSEMBED_MOBILE_EMBED_HOST || "vsrc.su").trim().toLowerCase();
+  return vidsrcHosts.has(host) ? host : "vsrc.su";
+}
+
+function resolveEmbedUrl(src: string | undefined, options: { mobile: boolean; mirror?: string }) {
+  if (!src) return undefined;
+
+  try {
+    const url = new URL(src);
+    if (!vidsrcHosts.has(url.hostname)) return src;
+
+    const mirror = String(options.mirror || "").trim().toLowerCase();
+    if (vidsrcHosts.has(mirror)) {
+      url.hostname = mirror;
+    } else if (options.mobile) {
+      url.hostname = mobileVidsrcHost();
+    }
+
+    if (options.mobile) {
+      url.searchParams.set("autoplay", "0");
+    }
+
+    return url.toString();
+  } catch {
+    return src;
+  }
+}
 
 function movieDisplayTitle(movie: Awaited<ReturnType<typeof getMovie>>) {
   const englishTitle = String(movie.originName || movie.name || "").trim();
@@ -58,6 +94,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function WatchPage(props: Props) {
   const params = await props.params;
   const searchParams = await props.searchParams;
+  const headerStore = await headers();
+  const userAgent = headerStore.get("user-agent") || "";
   const movie = await getMovie(params.slug);
   const serverIndex = Math.max(0, Number(searchParams?.server || "0"));
   const server = movie.episodes[serverIndex] || movie.episodes[0];
@@ -65,6 +103,12 @@ export default async function WatchPage(props: Props) {
   const episode = findEpisodeByWatchKey(server, epKey);
   const embed = episode?.linkEmbed;
   const m3u8 = episode?.linkM3u8;
+  const requestedPlayer = String(searchParams?.player || "").toLowerCase();
+  const forceEmbed = requestedPlayer === "embed";
+  const forceHls = requestedPlayer === "hls";
+  const mobileUA = isMobileUserAgent(userAgent);
+  const playerEmbed = resolveEmbedUrl(embed, { mobile: mobileUA, mirror: searchParams?.mirror });
+  const useEmbedPlayer = Boolean(playerEmbed) && (forceEmbed || (mobileUA && !forceHls));
 
   return (
     <article className="min-h-screen bg-black">
@@ -81,10 +125,10 @@ export default async function WatchPage(props: Props) {
       </header>
 
       <section className="aspect-video w-full bg-black">
-        {m3u8 ? (
+        {!useEmbedPlayer && m3u8 ? (
           <HlsVideo src={m3u8} poster={movie.thumb || movie.poster} />
-        ) : embed ? (
-          <iframe src={embed} title={`${movie.name} - ${episode?.name || "Tập phim"}`} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full border-0" />
+        ) : playerEmbed ? (
+          <iframe src={playerEmbed} title={`${movie.name} - ${episode?.name || "Tập phim"}`} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerPolicy="origin" allowFullScreen className="h-full w-full border-0" />
         ) : (
           <div className="grid h-full place-items-center p-6 text-center text-sm text-zinc-400">Không có link xem cho tập này.</div>
         )}

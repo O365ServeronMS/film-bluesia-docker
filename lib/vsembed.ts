@@ -40,14 +40,14 @@ function isSingleMovie(movie: Pick<MovieDetail, "type" | "episodeTotal">) {
 
 export function buildVsembedMovieUrl(movie: Pick<MovieDetail, "tmdb" | "imdb">) {
   const query = identityQuery(movie);
-  return query ? `${embedBaseUrl()}/embed/movie?${query}&autoplay=1` : "";
+  return query ? `${embedBaseUrl()}/embed/movie?${query}&autoplay=0` : "";
 }
 
 export function buildVsembedEpisodeUrl(movie: Pick<MovieDetail, "tmdb" | "imdb">, season: number, episode: number) {
   const query = identityQuery(movie);
   if (!query) return "";
 
-  const params = `${query}&season=${Math.max(1, season)}&episode=${Math.max(1, episode)}&autoplay=1&autonext=1`;
+  const params = `${query}&season=${Math.max(1, season)}&episode=${Math.max(1, episode)}&autoplay=0&autonext=1`;
   return `${embedBaseUrl()}/embed/tv?${params}`;
 }
 

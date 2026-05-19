@@ -1,6 +1,7 @@
 import { EpisodeServer, HomePayload, ListPayload, MovieCard, MovieDetail } from "@/lib/types";
 import { buildSmartSpotlight, type SpotlightCandidate } from "@/lib/spotlight";
 import { detailCacheTtlSeconds, listCacheTtlSeconds, readJsonCache, searchCacheTtlSeconds, taxonomyCacheTtlSeconds, writeJsonCache } from "@/lib/cache";
+import { buildVsembedServer } from "@/lib/vsembed";
 
 const BASE_URL = (process.env.OPHIM_BASE_URL || "https://ophim1.com").replace(/\/$/, "");
 const CDN_FALLBACKS = [
@@ -25,6 +26,11 @@ const countryLabels: Record<string, string> = {
 const categoryLabels: Record<string, string> = {
   "phim-chieu-rap": "Phim chiếu rạp"
 };
+
+export function displayEpisodeServerName(serverName?: string) {
+  const name = String(serverName || "").trim();
+  return /^vietsub/i.test(name) ? "OPhim" : name || "Server";
+}
 
 function normalizeCountrySlug(country?: string) {
   const slug = String(country || "").trim().toLowerCase();
@@ -142,6 +148,7 @@ export function normalizeCard(raw: any, cdn?: string): MovieCard {
     episodeCurrent: raw?.episode_current || raw?.episodeCurrent || undefined,
     time: raw?.time || raw?.duration || undefined,
     tmdb: {
+      id: tmdb?.id || tmdb?.tmdb_id || raw?.tmdb_id || undefined,
       vote_average: Number(tmdb?.vote_average || tmdb?.rating || 0) || undefined,
       vote_count: Number(tmdb?.vote_count || 0) || undefined
     },
@@ -272,7 +279,7 @@ export async function getMovie(slug: string): Promise<MovieDetail> {
   const base = normalizeCard(movieRaw, cdn);
   const episodesRaw = payload?.episodes || payload?.data?.episodes || [];
   const episodes: EpisodeServer[] = Array.isArray(episodesRaw) ? episodesRaw.map((server: any) => ({
-    serverName: server?.server_name || server?.serverName || "Server",
+    serverName: "OPhim",
     serverData: (server?.server_data || server?.serverData || []).map((ep: any) => ({
       name: ep?.name || ep?.filename || "Tập phim",
       slug: ep?.slug || undefined,
@@ -282,7 +289,7 @@ export async function getMovie(slug: string): Promise<MovieDetail> {
     }))
   })).filter((server: EpisodeServer) => server.serverData.length) : [];
 
-  return {
+  const movie: MovieDetail = {
     ...base,
     content: movieRaw?.content || movieRaw?.description || undefined,
     actor: Array.isArray(movieRaw?.actor) ? movieRaw.actor.filter(Boolean) : [],
@@ -292,6 +299,13 @@ export async function getMovie(slug: string): Promise<MovieDetail> {
     countryList: Array.isArray(movieRaw?.country) ? movieRaw.country : [],
     episodes
   };
+
+  const vsembedServer = buildVsembedServer(movie);
+  if (vsembedServer) {
+    movie.episodes = [...movie.episodes, vsembedServer];
+  }
+
+  return movie;
 }
 
 export async function getCategories() {

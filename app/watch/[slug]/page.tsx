@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, ListVideo } from "lucide-react";
 import { HlsVideo } from "@/components/HlsVideo";
 import { WatchRecorder } from "@/components/WatchRecorder";
+import { episodeWatchKey, findEpisodeByWatchKey } from "@/lib/episodes";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 
 export const revalidate = 300;
@@ -61,7 +62,7 @@ export default async function WatchPage(props: Props) {
   const serverIndex = Math.max(0, Number(searchParams?.server || "0"));
   const server = movie.episodes[serverIndex] || movie.episodes[0];
   const epKey = searchParams?.ep;
-  const episode = server?.serverData.find((ep) => ep.slug === epKey || ep.name === epKey) || server?.serverData[0];
+  const episode = findEpisodeByWatchKey(server, epKey);
   const embed = episode?.linkEmbed;
   const m3u8 = episode?.linkM3u8;
 
@@ -96,9 +97,10 @@ export default async function WatchPage(props: Props) {
             <h2 className="mb-3 text-sm font-bold text-zinc-300">{displayEpisodeServerName(sv.serverName)}</h2>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {sv.serverData.map((ep, epIndex) => {
-                const active = svIndex === serverIndex && (ep.slug === episode?.slug || ep.name === episode?.name || epIndex === 0 && !epKey);
+                const currentKey = episode ? episodeWatchKey(episode, server?.serverData.indexOf(episode) ?? 0) : "";
+                const active = svIndex === serverIndex && (episodeWatchKey(ep, epIndex) === currentKey || epIndex === 0 && !epKey);
                 return (
-                  <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(ep.slug || ep.name || String(epIndex))}`} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
+                  <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
                     {ep.name || epIndex + 1}
                   </Link>
                 );

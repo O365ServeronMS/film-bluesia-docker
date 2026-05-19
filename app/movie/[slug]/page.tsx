@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
+import { episodeWatchKey } from "@/lib/episodes";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { proxiedImage, ratingLabel, stripHtml } from "@/lib/utils";
 
@@ -111,7 +112,7 @@ export default async function MoviePage(props: Props) {
             </div>
           </div>
           <div className="mt-6 grid gap-3">
-            <Link href={`/watch/${movie.slug}${firstEp?.slug ? `?ep=${encodeURIComponent(firstEp.slug)}` : ""}`} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-base font-black text-black shadow-glow transition hover:scale-[1.01]">
+            <Link href={`/watch/${movie.slug}${firstEp ? `?ep=${encodeURIComponent(episodeWatchKey(firstEp, 0))}` : ""}`} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-base font-black text-black shadow-glow transition hover:scale-[1.01]">
               <Play className="h-5 w-5 fill-black" /> Xem phim
             </Link>
             <MovieActions movie={movie} />
@@ -143,7 +144,7 @@ export default async function MoviePage(props: Props) {
                 <h3 className="mb-3 text-sm font-bold text-zinc-300">{displayEpisodeServerName(server.serverName)}</h3>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                   {server.serverData.map((ep, epIndex) => (
-                    <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${serverIndex}&ep=${encodeURIComponent(ep.slug || ep.name || String(epIndex))}`} className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-gold hover:text-black">
+                    <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${serverIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`} className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-gold hover:text-black">
                       {ep.name || epIndex + 1}
                     </Link>
                   ))}

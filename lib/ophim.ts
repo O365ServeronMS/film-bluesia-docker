@@ -2,6 +2,7 @@ import { EpisodeServer, HomePayload, ListPayload, MovieCard, MovieDetail } from 
 import { buildSmartSpotlight, type SpotlightCandidate } from "@/lib/spotlight";
 import { detailCacheTtlSeconds, listCacheTtlSeconds, readJsonCache, searchCacheTtlSeconds, taxonomyCacheTtlSeconds, writeJsonCache } from "@/lib/cache";
 import { buildVsembedServer } from "@/lib/vsembed";
+import { normalizedEpisodeName, normalizedEpisodeSlug } from "@/lib/episodes";
 
 const BASE_URL = (process.env.OPHIM_BASE_URL || "https://ophim1.com").replace(/\/$/, "");
 const CDN_FALLBACKS = [
@@ -280,9 +281,9 @@ export async function getMovie(slug: string): Promise<MovieDetail> {
   const episodesRaw = payload?.episodes || payload?.data?.episodes || [];
   const episodes: EpisodeServer[] = Array.isArray(episodesRaw) ? episodesRaw.map((server: any) => ({
     serverName: "OPhim",
-    serverData: (server?.server_data || server?.serverData || []).map((ep: any) => ({
-      name: ep?.name || ep?.filename || "Tập phim",
-      slug: ep?.slug || undefined,
+    serverData: (server?.server_data || server?.serverData || []).map((ep: any, epIndex: number) => ({
+      name: normalizedEpisodeName(ep, epIndex),
+      slug: normalizedEpisodeSlug(ep, epIndex),
       filename: ep?.filename || undefined,
       linkEmbed: ep?.link_embed || ep?.linkEmbed || undefined,
       linkM3u8: ep?.link_m3u8 || ep?.linkM3u8 || undefined

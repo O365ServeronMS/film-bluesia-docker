@@ -65,6 +65,16 @@ function jsonFetchOptions(revalidate: number) {
   } as RequestInit;
 }
 
+function jsonNoStoreFetchOptions() {
+  return {
+    cache: "no-store",
+    headers: {
+      "User-Agent": "film.bluesia.net/3.0.2",
+      "Accept": "application/json"
+    }
+  } as RequestInit;
+}
+
 function jsonCachePolicy(path: string, fallbackSeconds = 600) {
   if (/\/v1\/api\/danh-sach\//.test(path) || /\/danh-sach\//.test(path) || /\/quoc-gia\//.test(path)) {
     return { namespace: "metadata-list", ttlSeconds: listCacheTtlSeconds() };
@@ -99,6 +109,55 @@ async function fetchJson<T>(path: string, revalidate = 600): Promise<T> {
     return data;
   } catch (error) {
     const stale = await readJsonCache<T>(policy.namespace, cacheKey, policy.ttlSeconds, true);
+    if (stale) return stale;
+    throw error;
+  }
+}
+
+function sourceEpisodeServers(payload?: SourceMoviePayload) {
+  const episodesRaw = payload?.episodes || payload?.data?.episodes || [];
+  return Array.isArray(episodesRaw) ? episodesRaw : [];
+}
+
+function sourceEpisodeHasPlayableLink(episode: { link_embed?: string; linkEmbed?: string; link_m3u8?: string; linkM3u8?: string }) {
+  return Boolean(episode?.link_embed || episode?.linkEmbed || episode?.link_m3u8 || episode?.linkM3u8);
+}
+
+function sourceMoviePayloadNeedsPlayableRefresh(payload?: SourceMoviePayload) {
+  const servers = sourceEpisodeServers(payload);
+  const episodes = servers.flatMap((server) => {
+    const serverData = server?.server_data || server?.serverData || [];
+    return Array.isArray(serverData) ? serverData : [];
+  });
+
+  return episodes.length > 0 && !episodes.some(sourceEpisodeHasPlayableLink);
+}
+
+async function fetchMoviePayload(slug: string): Promise<SourceMoviePayload> {
+  const path = `/phim/${encodeURIComponent(slug)}`;
+  const url = `${BASE_URL}${path}`;
+  const policy = jsonCachePolicy(path, 300);
+  const cached = await readJsonCache<SourceMoviePayload>(policy.namespace, url, policy.ttlSeconds);
+
+  if (cached && !sourceMoviePayloadNeedsPlayableRefresh(cached)) {
+    return cached;
+  }
+
+  try {
+    const res = await fetch(url, cached ? jsonNoStoreFetchOptions() : jsonFetchOptions(policy.ttlSeconds));
+    if (!res.ok) {
+      throw new Error(`OPhim request failed ${res.status}: ${url}`);
+    }
+
+    const data = await res.json() as SourceMoviePayload;
+    if (!cached || !sourceMoviePayloadNeedsPlayableRefresh(data)) {
+      await writeJsonCache(policy.namespace, url, data, url);
+      return data;
+    }
+
+    return cached;
+  } catch (error) {
+    const stale = cached || await readJsonCache<SourceMoviePayload>(policy.namespace, url, policy.ttlSeconds, true);
     if (stale) return stale;
     throw error;
   }
@@ -305,11 +364,11 @@ export async function getHome(): Promise<HomePayload> {
 }
 
 export async function getMovie(slug: string): Promise<MovieDetail> {
-  const payload = await fetchJson<SourceMoviePayload>(`/phim/${encodeURIComponent(slug)}`, 300);
+  const payload = await fetchMoviePayload(slug);
   const movieRaw = payload?.movie || payload?.data?.item || payload?.data?.movie || payload?.data || {};
   const cdn = payload?.APP_DOMAIN_CDN_IMAGE || payload?.data?.APP_DOMAIN_CDN_IMAGE;
   const base = normalizeCard(movieRaw, cdn);
-  const episodesRaw = payload?.episodes || payload?.data?.episodes || [];
+  const episodesRaw = sourceEpisodeServers(payload);
   const episodes: EpisodeServer[] = Array.isArray(episodesRaw) ? episodesRaw.map((server) => ({
     serverName: "OPhim",
     serverData: (server?.server_data || server?.serverData || []).map((ep, epIndex) => ({

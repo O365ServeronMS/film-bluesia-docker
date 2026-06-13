@@ -43,6 +43,7 @@
 - Removed Cloudflare-specific CDN response headers from active runtime code.
 - Added `returnTo` context threading from section/list/search/hero links into movie/watch routes.
 - Watch episode links now use replacement navigation to reduce browser history pollution during episode switches.
+- Watch episode resolution now matches explicit episode keys, slugs, names, and filenames before using legacy zero-based numeric index fallback so upstream `ep=1`/`slug=1` opens episode 1 instead of episode 2.
 - Bottom nav active state now considers `returnTo` while on movie/watch routes.
 - Bottom nav is wrapped in a root-layout Suspense boundary because it reads search params and otherwise blocks static 404 prerendering in Next.js.
 - Added lightweight `app/robots.ts` and `app/sitemap.ts` for core routes only; dynamic movie/search pages are not mass-generated.

@@ -1,35 +1,48 @@
+# Dependencies
 node_modules/
+
+# Next.js / Vercel build output
 .next/
 out/
 dist/
 build/
+.vercel/
 
+# Runtime caches and reports
+.turbo/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Local environment
 .env
 .env.*
 !.env.example
 
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-.DS_Store
 *.log
 
+# OS/editor/local workspace state
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+scratch/
+tmp/
+
+# Local backup/temp files
 backups/
 *.bak
 *.bak.*
 *.tmp
 *.swp
-tmp/
-
-# Local editor/workspace state
-.vscode/
-scratch/
-
-# TypeScript incremental cache
-*.tsbuildinfo
 
 # Local assistant notes
 claude.md
 CLAUDE.md
+memory.local.md

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
 import { episodeWatchKey } from "@/lib/episodes";
+import { responsiveImage } from "@/lib/images";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
-import { directImage, ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
+import { ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
 
 export const revalidate = 300;
 
@@ -72,15 +73,18 @@ export default async function MoviePage(props: Props) {
   const firstEp = movie.episodes[0]?.serverData[0];
   const heroImage = movie.thumb || movie.poster;
   const posterImage = movie.poster || movie.thumb;
+  const heroImageSource = responsiveImage(heroImage, "backdrop");
+  const posterImageSource = responsiveImage(posterImage, "poster");
 
   return (
     <article>
       <section className="relative min-h-[560px] overflow-hidden">
         {heroImage ? (
           <picture>
-            <source media="(min-width: 640px)" srcSet={directImage(heroImage)} />
+            <source type="image/webp" media="(min-width: 640px)" srcSet={heroImageSource.desktopWebpSrcSet} sizes="720px" />
+            <source type="image/webp" srcSet={heroImageSource.mobileWebpSrcSet} sizes="100vw" />
             <img
-              src={directImage(heroImage)}
+              src={heroImageSource.fallbackSrc}
               alt={movie.name}
               className="absolute inset-0 h-full w-full object-cover opacity-60"
               fetchPriority="high"
@@ -98,9 +102,10 @@ export default async function MoviePage(props: Props) {
             <div className="w-36 shrink-0 overflow-hidden rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
               {posterImage ? (
                 <picture>
-                  <source media="(min-width: 640px)" srcSet={directImage(posterImage)} />
+                  <source type="image/webp" media="(min-width: 640px)" srcSet={posterImageSource.desktopWebpSrcSet} sizes="144px" />
+                  <source type="image/webp" srcSet={posterImageSource.mobileWebpSrcSet} sizes="144px" />
                   <img
-                    src={directImage(posterImage)}
+                    src={posterImageSource.fallbackSrc}
                     alt={movie.name}
                     className="aspect-[2/3] h-full w-full object-cover"
                     loading="lazy"

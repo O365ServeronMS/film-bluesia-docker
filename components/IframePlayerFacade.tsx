@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Play } from "lucide-react";
+import { responsiveImage } from "@/lib/images";
 
 type IframePlayerFacadeProps = {
   src: string;
@@ -11,6 +12,7 @@ type IframePlayerFacadeProps = {
 
 export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadeProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const posterSource = responsiveImage(poster, "player");
 
   if (isPlaying) {
     return (
@@ -32,8 +34,10 @@ export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadePro
     >
       {poster ? (
         <picture>
+          <source type="image/webp" media="(min-width: 640px)" srcSet={posterSource.desktopWebpSrcSet} sizes="720px" />
+          <source type="image/webp" srcSet={posterSource.mobileWebpSrcSet} sizes="100vw" />
           <img
-            src={poster}
+            src={posterSource.fallbackSrc}
             alt={title}
             className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-700 ease-out group-hover:scale-105 group-hover:opacity-30"
             loading="eager"

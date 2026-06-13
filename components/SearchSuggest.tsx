@@ -1,12 +1,10 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { responsiveImage } from "@/lib/images";
 import type { MovieCard } from "@/lib/types";
-import { directImage } from "@/lib/utils";
 
 type SearchSuggestProps = {
   initialQuery?: string;
@@ -91,6 +89,39 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
     router.push("/movie/" + slug);
   }
 
+  function renderSuggestion(movie: MovieCard) {
+    const image = movie.poster || movie.thumb;
+    const imageSource = responsiveImage(image, "suggestion");
+
+    return (
+      <button
+        key={movie.slug}
+        type="button"
+        onClick={() => openMovie(movie.slug)}
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/10 focus:bg-white/10 focus:outline-none"
+      >
+        <span className="h-16 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-900">
+          {image ? (
+            <picture>
+              <source type="image/webp" media="(min-width: 640px)" srcSet={imageSource.desktopWebpSrcSet} sizes="44px" />
+              <source type="image/webp" srcSet={imageSource.mobileWebpSrcSet} sizes="44px" />
+              <img src={imageSource.fallbackSrc} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+            </picture>
+          ) : null}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-1 text-sm font-semibold text-white">{movie.name}</span>
+          {movie.originName && <span className="mt-0.5 block truncate text-xs text-zinc-400">{movie.originName}</span>}
+          <span className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-zinc-400">
+            {movie.year && <span>{movie.year}</span>}
+            {movie.episodeCurrent && <span>{movie.episodeCurrent}</span>}
+            {movie.quality && <span>{movie.quality}</span>}
+          </span>
+        </span>
+      </button>
+    );
+  }
+
   const showPanel = open && query.trim().length >= MIN_QUERY_LENGTH;
 
   return (
@@ -115,29 +146,7 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
             <div className="px-4 py-3 text-sm text-zinc-400">Đang tìm...</div>
           ) : state === "ready" ? (
             <div className="max-h-[70vh] overflow-y-auto py-1">
-              {items.map((movie) => (
-                <button
-                  key={movie.slug}
-                  type="button"
-                  onClick={() => openMovie(movie.slug)}
-                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/10 focus:bg-white/10 focus:outline-none"
-                >
-                  <span className="h-16 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-900">
-                    {movie.poster || movie.thumb ? (
-                      <img src={directImage(movie.poster || movie.thumb)} alt="" className="h-full w-full object-cover" loading="lazy" />
-                    ) : null}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="line-clamp-1 text-sm font-semibold text-white">{movie.name}</span>
-                    {movie.originName && <span className="mt-0.5 block truncate text-xs text-zinc-400">{movie.originName}</span>}
-                    <span className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-zinc-400">
-                      {movie.year && <span>{movie.year}</span>}
-                      {movie.episodeCurrent && <span>{movie.episodeCurrent}</span>}
-                      {movie.quality && <span>{movie.quality}</span>}
-                    </span>
-                  </span>
-                </button>
-              ))}
+              {items.map(renderSuggestion)}
             </div>
           ) : state === "empty" ? (
             <div className="px-4 py-3 text-sm text-zinc-400">Không có gợi ý phù hợp.</div>

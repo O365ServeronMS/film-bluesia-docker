@@ -38,10 +38,10 @@ export function LazyImage({ src, srcSet, desktopSrcSet, desktopSizes, sizes, alt
     <div ref={containerRef} className="h-full w-full">
       {visible ? (
         <picture>
-          {desktopSrcSet ? <source media="(min-width: 640px)" srcSet={desktopSrcSet} sizes={desktopSizes} /> : null}
+          {desktopSrcSet ? <source type="image/webp" media="(min-width: 640px)" srcSet={desktopSrcSet} sizes={desktopSizes} /> : null}
+          {srcSet ? <source type="image/webp" srcSet={srcSet} sizes={sizes} /> : null}
           <img
             src={src}
-            srcSet={srcSet}
             sizes={sizes}
             alt={alt}
             loading="lazy"

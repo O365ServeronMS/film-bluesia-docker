@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { imageFallback, responsiveImage } from "@/lib/images";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,13 +26,11 @@ export function normalizeEpisodeName(value?: string, index = 0) {
 }
 
 export function directImage(src?: string) {
-  if (!src) return "";
-  return src;
+  return imageFallback(src);
 }
 
 export function directImageSrcSet(src?: string) {
-  if (!src) return undefined;
-  return src;
+  return responsiveImage(src, "poster").mobileWebpSrcSet;
 }
 
 export function encodedReturnTo(path: string) {

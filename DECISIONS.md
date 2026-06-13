@@ -36,6 +36,7 @@
 - Kept ESLint on 9.39.4 instead of npm `latest` 10.5.0 because `eslint-config-next` 16.2.9's bundled `eslint-plugin-react` fails under ESLint 10 with `contextOrFilename.getFilename is not a function`.
 - Kept `critters` at 0.0.25 because the registry `latest` tag currently points backward to 0.0.23; downgrading would not be a stable update.
 - Poster images now use direct upstream/CDN URLs instead of `/api/image` proxy URLs.
+- Visible poster/backdrop/hero/facade images now render with WebP `<source>` candidates split by mobile and desktop widths through a shared `lib/images.ts` helper, while keeping the original upstream image URL as the `<img>` fallback. The project currently uses an external image CDN for these optimized image URLs: default `https://wsrv.nl`, configurable via `NEXT_PUBLIC_IMAGE_CDN_BASE_URL`. This does not add `/api/image`, Sharp, Vercel image optimization, filesystem cache, or video/media proxying.
 - Removed active `/api/image` route and the direct `sharp` dependency to avoid high-volume Function invocations, Image Optimization-like quota pressure, bandwidth amplification, and ephemeral filesystem cache writes.
 - Removed active `/api/cache/status` and `/api/cache/warmup` routes because cache warmup/inspection was a VPS/Docker operation and would spend Vercel Functions without durable storage.
 - Removed `lib/cache.ts` filesystem cache. Metadata now relies on Next server `fetch` revalidation.

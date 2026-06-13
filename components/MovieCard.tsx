@@ -1,8 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Heart, Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import type { MovieCard as MovieCardType } from "@/lib/types";
-import { responsiveImage } from "@/lib/images";
+import { imageQuality, imageSrc } from "@/lib/images";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
 export function MovieCard({
@@ -21,9 +22,8 @@ export function MovieCard({
   returnTo?: string;
 }) {
   const image = movie.poster || movie.thumb;
-  const imageSource = responsiveImage(image, "poster");
-  const mobileImageSizes = compact ? "31vw" : "50vw";
-  const desktopImageSizes = compact ? "(min-width: 640px) 25vw, 31vw" : "(min-width: 640px) 240px, 50vw";
+  const imageSource = imageSrc(image);
+  const imageSizes = compact ? "(min-width: 720px) 168px, 31vw" : "(min-width: 720px) 240px, 50vw";
   const imageClassName = "h-full w-full object-cover transition duration-500 group-hover:scale-105";
   const Title = headingLevel === 2 ? "h2" : "h3";
 
@@ -34,28 +34,22 @@ export function MovieCard({
           {image ? (
             deferImage && !priority ? (
               <LazyImage
-                src={imageSource.fallbackSrc}
-                srcSet={imageSource.mobileWebpSrcSet}
-                desktopSrcSet={imageSource.desktopWebpSrcSet}
-                sizes={mobileImageSizes}
-                desktopSizes={desktopImageSizes}
+                src={imageSource}
+                sizes={imageSizes}
                 alt={movie.name}
+                preset="poster"
                 className={imageClassName}
               />
             ) : (
-              <picture>
-                <source type="image/webp" media="(min-width: 640px)" srcSet={imageSource.desktopWebpSrcSet} sizes={desktopImageSizes} />
-                <source type="image/webp" srcSet={imageSource.mobileWebpSrcSet} sizes={mobileImageSizes} />
-                <img
-                  src={imageSource.fallbackSrc}
-                  sizes={mobileImageSizes}
-                  alt={movie.name}
-                  loading={priority ? "eager" : "lazy"}
-                  fetchPriority={priority ? "high" : "auto"}
-                  decoding="async"
-                  className={imageClassName}
-                />
-              </picture>
+              <Image
+                src={imageSource}
+                sizes={imageSizes}
+                alt={movie.name}
+                fill
+                priority={priority}
+                quality={imageQuality("poster")}
+                className={imageClassName}
+              />
             )
           ) : (
             <div className="grid h-full place-items-center px-4 text-center text-sm text-zinc-500">Không có ảnh</div>

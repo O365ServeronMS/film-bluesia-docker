@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { responsiveImage } from "@/lib/images";
+import { imageQuality, imageSrc } from "@/lib/images";
 import type { MovieCard } from "@/lib/types";
 
 type SearchSuggestProps = {
@@ -91,7 +92,7 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
 
   function renderSuggestion(movie: MovieCard) {
     const image = movie.poster || movie.thumb;
-    const imageSource = responsiveImage(image, "suggestion");
+    const imageSource = imageSrc(image);
 
     return (
       <button
@@ -102,11 +103,15 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
       >
         <span className="h-16 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-900">
           {image ? (
-            <picture>
-              <source type="image/webp" media="(min-width: 640px)" srcSet={imageSource.desktopWebpSrcSet} sizes="44px" />
-              <source type="image/webp" srcSet={imageSource.mobileWebpSrcSet} sizes="44px" />
-              <img src={imageSource.fallbackSrc} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
-            </picture>
+            <Image
+              src={imageSource}
+              alt=""
+              width={44}
+              height={64}
+              sizes="44px"
+              quality={imageQuality("suggestion")}
+              className="h-full w-full object-cover"
+            />
           ) : null}
         </span>
         <span className="min-w-0 flex-1">

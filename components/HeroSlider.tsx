@@ -2,9 +2,10 @@
 
 import { KeyboardEvent, TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Info, Play, Sparkles, Star } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
-import { responsiveImage } from "@/lib/images";
+import { imageQuality, imageSrc } from "@/lib/images";
 import { baseSpotlightScore, normalizedLabelSet } from "@/lib/spotlight";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
@@ -152,7 +153,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
   const visibleIndex = activeIndex < slides.length ? activeIndex : 0;
   const active = slides[visibleIndex];
   const activeImage = active.thumb || active.poster;
-  const activeImageSource = responsiveImage(activeImage, "hero");
+  const activeImageSource = imageSrc(activeImage);
   const isPersonalized = Boolean(personalData && (personalData.favorites.length || personalData.history.length));
   const canNavigate = slides.length > 1;
 
@@ -208,19 +209,16 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
         aria-label="Smart Spotlight"
       >
         {activeImage && (
-          <picture key={`${active.slug}-${activeImage}`}>
-            <source type="image/webp" media="(min-width: 640px)" srcSet={activeImageSource.desktopWebpSrcSet} sizes="688px" />
-            <source type="image/webp" srcSet={activeImageSource.mobileWebpSrcSet} sizes="calc(100vw - 32px)" />
-            <img
-              src={activeImageSource.fallbackSrc}
-              sizes="(min-width: 640px) 688px, calc(100vw - 32px)"
-              alt={active.name}
-              loading={visibleIndex === 0 ? "eager" : "lazy"}
-              fetchPriority={visibleIndex === 0 ? "high" : "auto"}
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity duration-700"
-            />
-          </picture>
+          <Image
+            key={`${active.slug}-${activeImage}`}
+            src={activeImageSource}
+            sizes="(min-width: 720px) 688px, calc(100vw - 32px)"
+            alt={active.name}
+            fill
+            priority={visibleIndex === 0}
+            quality={imageQuality("hero")}
+            className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity duration-700"
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
 import { episodeWatchKey } from "@/lib/episodes";
-import { responsiveImage } from "@/lib/images";
+import { imageQuality, imageSrc } from "@/lib/images";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
 
@@ -73,25 +74,22 @@ export default async function MoviePage(props: Props) {
   const firstEp = movie.episodes[0]?.serverData[0];
   const heroImage = movie.thumb || movie.poster;
   const posterImage = movie.poster || movie.thumb;
-  const heroImageSource = responsiveImage(heroImage, "backdrop");
-  const posterImageSource = responsiveImage(posterImage, "poster");
+  const heroImageSource = imageSrc(heroImage);
+  const posterImageSource = imageSrc(posterImage);
 
   return (
     <article>
       <section className="relative min-h-[560px] overflow-hidden">
         {heroImage ? (
-          <picture>
-            <source type="image/webp" media="(min-width: 640px)" srcSet={heroImageSource.desktopWebpSrcSet} sizes="720px" />
-            <source type="image/webp" srcSet={heroImageSource.mobileWebpSrcSet} sizes="100vw" />
-            <img
-              src={heroImageSource.fallbackSrc}
-              alt={movie.name}
-              className="absolute inset-0 h-full w-full object-cover opacity-60"
-              fetchPriority="high"
-              loading="eager"
-              decoding="async"
-            />
-          </picture>
+          <Image
+            src={heroImageSource}
+            alt={movie.name}
+            fill
+            priority
+            sizes="(min-width: 720px) 720px, 100vw"
+            quality={imageQuality("backdrop")}
+            className="absolute inset-0 h-full w-full object-cover opacity-60"
+          />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-[#07090f]/80 to-[#07090f]" />
         <div className="relative z-10 px-4 pb-8 pt-5">
@@ -101,17 +99,15 @@ export default async function MoviePage(props: Props) {
           <div className="mt-10 flex gap-4">
             <div className="w-36 shrink-0 overflow-hidden rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
               {posterImage ? (
-                <picture>
-                  <source type="image/webp" media="(min-width: 640px)" srcSet={posterImageSource.desktopWebpSrcSet} sizes="144px" />
-                  <source type="image/webp" srcSet={posterImageSource.mobileWebpSrcSet} sizes="144px" />
-                  <img
-                    src={posterImageSource.fallbackSrc}
-                    alt={movie.name}
-                    className="aspect-[2/3] h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </picture>
+                <Image
+                  src={posterImageSource}
+                  alt={movie.name}
+                  width={144}
+                  height={216}
+                  sizes="144px"
+                  quality={imageQuality("poster")}
+                  className="aspect-[2/3] h-full w-full object-cover"
+                />
               ) : null}
             </div>
             <div className="min-w-0 flex-1 pt-4">

@@ -59,9 +59,9 @@ export default async function ListPage(props: Props) {
   const category = supportsCategoryFilter ? normalizeCategory(searchParams?.category) : "";
   const activeFilters = { country, category };
   const data = await getList(params.type, page, 30, country, category);
-
   const pageNumbers = paginationPages(data.page || page, data.totalPages);
   const currentPage = data.page || page;
+  const currentReturnTo = listHref(params.type, currentPage, activeFilters);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = data.totalPages ? currentPage < data.totalPages : true;
 
@@ -132,6 +132,7 @@ export default async function ListPage(props: Props) {
             headingLevel={2}
             priority={index === 0}
             deferImage={index >= 9}
+            returnTo={currentReturnTo}
           />
         ))}
       </section>

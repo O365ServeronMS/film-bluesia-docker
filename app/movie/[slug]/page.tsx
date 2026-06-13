@@ -4,11 +4,21 @@ import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
 import { episodeWatchKey } from "@/lib/episodes";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
-import { proxiedImage, ratingLabel, stripHtml } from "@/lib/utils";
+import { directImage, ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
 
 export const revalidate = 300;
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<{ returnTo?: string; from?: string }> };
+
+function safeReturnPath(value?: string) {
+  if (!value) return "";
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "";
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : "";
+  }
+}
 
 function movieDisplayTitle(movie: Awaited<ReturnType<typeof getMovie>>) {
   const englishTitle = String(movie.originName || movie.name || "").trim();
@@ -56,6 +66,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function MoviePage(props: Props) {
   const params = await props.params;
+  const searchParams = props.searchParams ? await props.searchParams : {};
+  const returnTo = safeReturnPath(searchParams?.returnTo || searchParams?.from);
   const movie = await getMovie(params.slug);
   const firstEp = movie.episodes[0]?.serverData[0];
   const heroImage = movie.thumb || movie.poster;
@@ -66,9 +78,9 @@ export default async function MoviePage(props: Props) {
       <section className="relative min-h-[560px] overflow-hidden">
         {heroImage ? (
           <picture>
-            <source media="(min-width: 640px)" srcSet={proxiedImage(heroImage, 720, 70)} />
+            <source media="(min-width: 640px)" srcSet={directImage(heroImage)} />
             <img
-              src={proxiedImage(heroImage, 420, 65)}
+              src={directImage(heroImage)}
               alt={movie.name}
               className="absolute inset-0 h-full w-full object-cover opacity-60"
               fetchPriority="high"
@@ -79,16 +91,16 @@ export default async function MoviePage(props: Props) {
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-[#07090f]/80 to-[#07090f]" />
         <div className="relative z-10 px-4 pb-8 pt-5">
-          <Link href="/" className="grid h-11 w-11 place-items-center rounded-full bg-black/50 text-white backdrop-blur">
+          <Link href={returnTo || "/"} className="grid h-11 w-11 place-items-center rounded-full bg-black/50 text-white backdrop-blur">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="mt-10 flex gap-4">
             <div className="w-36 shrink-0 overflow-hidden rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
               {posterImage ? (
                 <picture>
-                  <source media="(min-width: 640px)" srcSet={proxiedImage(posterImage, 320, 60)} />
+                  <source media="(min-width: 640px)" srcSet={directImage(posterImage)} />
                   <img
-                    src={proxiedImage(posterImage, 240, 55)}
+                    src={directImage(posterImage)}
                     alt={movie.name}
                     className="aspect-[2/3] h-full w-full object-cover"
                     loading="lazy"
@@ -112,7 +124,7 @@ export default async function MoviePage(props: Props) {
             </div>
           </div>
           <div className="mt-6 grid gap-3">
-            <Link href={`/watch/${movie.slug}${firstEp ? `?ep=${encodeURIComponent(episodeWatchKey(firstEp, 0))}` : ""}`} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-base font-black text-black shadow-glow transition hover:scale-[1.01]">
+            <Link href={withReturnTo(`/watch/${movie.slug}${firstEp ? `?ep=${encodeURIComponent(episodeWatchKey(firstEp, 0))}` : ""}`, returnTo)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-5 py-4 text-base font-black text-black shadow-glow transition hover:scale-[1.01]">
               <Play className="h-5 w-5 fill-black" /> Xem phim
             </Link>
             <MovieActions movie={movie} />
@@ -144,7 +156,7 @@ export default async function MoviePage(props: Props) {
                 <h3 className="mb-3 text-sm font-bold text-zinc-300">{displayEpisodeServerName(server.serverName)}</h3>
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                   {server.serverData.map((ep, epIndex) => (
-                    <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${serverIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`} className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-gold hover:text-black">
+                    <Link key={`${ep.slug || ep.name}-${epIndex}`} href={withReturnTo(`/watch/${movie.slug}?server=${serverIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`, returnTo)} className="rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-gold hover:text-black">
                       {ep.name || epIndex + 1}
                     </Link>
                   ))}

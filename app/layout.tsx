@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
 import "./globals.css";
@@ -62,7 +62,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main className="mx-auto min-h-screen w-full max-w-[720px] safe-bottom">
           {children}
         </main>
-        <BottomNav />
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
       </body>
     </html>
   );

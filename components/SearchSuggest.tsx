@@ -1,13 +1,12 @@
 "use client";
 
-/* Suggestion thumbnails use the app-owned /api/image proxy. */
 /* eslint-disable @next/next/no-img-element */
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
-import { proxiedImage } from "@/lib/utils";
+import { directImage } from "@/lib/utils";
 
 type SearchSuggestProps = {
   initialQuery?: string;
@@ -125,7 +124,7 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
                 >
                   <span className="h-16 w-11 shrink-0 overflow-hidden rounded-md bg-zinc-900">
                     {movie.poster || movie.thumb ? (
-                      <img src={proxiedImage(movie.poster || movie.thumb)} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={directImage(movie.poster || movie.thumb)} alt="" className="h-full w-full object-cover" loading="lazy" />
                     ) : null}
                   </span>
                   <span className="min-w-0 flex-1">

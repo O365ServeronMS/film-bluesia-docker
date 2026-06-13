@@ -17,10 +17,10 @@ export function SectionRow({ title, href, items }: { title: string; href: string
         {items.slice(0, 8).map((movie, index) =>
           index >= 6 ? (
             <div key={movie.slug} className="hidden sm:block">
-              <MovieCard movie={movie} compact />
+              <MovieCard movie={movie} compact returnTo={href} />
             </div>
           ) : (
-            <MovieCard key={movie.slug} movie={movie} compact />
+            <MovieCard key={movie.slug} movie={movie} compact returnTo={href} />
           )
         )}
       </div>

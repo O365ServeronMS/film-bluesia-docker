@@ -2,7 +2,7 @@ import { HeroSlider } from "@/components/HeroSlider";
 import { SectionRow } from "@/components/SectionRow";
 import { TopBar } from "@/components/TopBar";
 import { getHome } from "@/lib/ophim";
-import { proxiedImageCandidateSrcSet } from "@/lib/utils";
+import { directImageSrcSet } from "@/lib/utils";
 
 export const revalidate = 900; // 15 phút — cân bằng freshness và rebuild cost
 
@@ -10,13 +10,7 @@ export default async function HomePage() {
   const home = await getHome();
 
   const firstHeroImage = home.hero[0]?.thumb || home.hero[0]?.poster;
-  const heroPreloadSrcSet = firstHeroImage
-    ? proxiedImageCandidateSrcSet(firstHeroImage, [
-        { width: 360, quality: 60 },
-        { width: 540, quality: 65 },
-        { width: 720, quality: 70 }
-      ])
-    : undefined;
+  const heroPreloadSrcSet = directImageSrcSet(firstHeroImage);
 
   return (
     <>

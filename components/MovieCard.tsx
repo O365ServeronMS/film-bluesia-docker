@@ -2,39 +2,34 @@ import Link from "next/link";
 import { Heart, Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import type { MovieCard as MovieCardType } from "@/lib/types";
-import { proxiedImage, proxiedImageCandidateSrcSet, ratingLabel } from "@/lib/utils";
+import { directImage, directImageSrcSet, ratingLabel, withReturnTo } from "@/lib/utils";
 
 export function MovieCard({
   movie,
   compact = false,
   headingLevel = 3,
   deferImage = false,
-  priority = false
+  priority = false,
+  returnTo
 }: {
   movie: MovieCardType;
   compact?: boolean;
   headingLevel?: 2 | 3;
   deferImage?: boolean;
   priority?: boolean;
+  returnTo?: string;
 }) {
   const image = movie.poster || movie.thumb;
-  const imageSrc = image ? proxiedImage(image, compact ? 220 : 320, 55) : "";
-  const mobileImageSrcSet = image ? proxiedImageCandidateSrcSet(image, [
-    { width: 180, quality: 55 },
-    { width: 240, quality: 55 },
-    { width: 320, quality: 55 }
-  ]) : "";
-  const desktopImageSrcSet = image ? proxiedImageCandidateSrcSet(image, [
-    { width: 420, quality: 70 },
-    { width: 720, quality: 70 }
-  ]) : "";
-  const mobileImageSizes = "31vw";
-  const desktopImageSizes = "720px";
+  const imageSrc = directImage(image);
+  const mobileImageSrcSet = directImageSrcSet(image);
+  const desktopImageSrcSet = directImageSrcSet(image);
+  const mobileImageSizes = compact ? "31vw" : "50vw";
+  const desktopImageSizes = compact ? "(min-width: 640px) 25vw, 31vw" : "(min-width: 640px) 240px, 50vw";
   const imageClassName = "h-full w-full object-cover transition duration-500 group-hover:scale-105";
   const Title = headingLevel === 2 ? "h2" : "h3";
 
   return (
-    <Link href={`/movie/${movie.slug}`} className="group block min-w-0">
+    <Link href={withReturnTo(`/movie/${movie.slug}`, returnTo)} className="group block min-w-0">
       <article className="overflow-hidden rounded-2xl bg-card shadow-xl shadow-black/20 ring-1 ring-white/5 transition duration-300 group-hover:-translate-y-1 group-hover:ring-gold/50">
         <div className="relative aspect-[2/3] overflow-hidden bg-zinc-900">
           {image ? (

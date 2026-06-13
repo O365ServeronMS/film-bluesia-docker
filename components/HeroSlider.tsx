@@ -1,6 +1,5 @@
 "use client";
 
-/* Images use the app-owned responsive /api/image proxy rather than the Next image pipeline. */
 /* eslint-disable @next/next/no-img-element */
 
 import { KeyboardEvent, TouchEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -8,7 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Info, Play, Sparkles, Star } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
 import { baseSpotlightScore, normalizedLabelSet } from "@/lib/spotlight";
-import { proxiedImage, proxiedImageCandidateSrcSet, ratingLabel } from "@/lib/utils";
+import { directImage, directImageSrcSet, ratingLabel, withReturnTo } from "@/lib/utils";
 
 const SLIDE_INTERVAL_MS = 5000;
 const FAV_KEY = "film.bluesia.net:favorites";
@@ -211,12 +210,8 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
         {activeImage && (
           <img
             key={`${active.slug}-${activeImage}`}
-            src={proxiedImage(activeImage, 720, 70)}
-            srcSet={proxiedImageCandidateSrcSet(activeImage, [
-              { width: 360, quality: 60 },
-              { width: 540, quality: 65 },
-              { width: 720, quality: 70 }
-            ])}
+            src={directImage(activeImage)}
+            srcSet={directImageSrcSet(activeImage)}
             sizes="(min-width: 640px) 688px, calc(100vw - 32px)"
             alt={active.name}
             loading={visibleIndex === 0 ? "eager" : "lazy"}
@@ -261,10 +256,10 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
           <h1 className="line-clamp-2 min-h-[4.5rem] max-w-[82%] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:max-w-[74%]">{active.name}</h1>
           <p className="mt-1 line-clamp-1 min-h-5 max-w-[86%] text-sm italic text-zinc-200 sm:max-w-[78%]">{active.originName || active.name} · {active.year || "N/A"}{active.country ? ` · ${active.country}` : ""}</p>
           <div className="mt-5 flex items-center gap-3">
-            <Link href={`/watch/${active.slug}`} aria-label={`Xem phim ${active.name}`} className="grid h-16 w-16 place-items-center rounded-full bg-gold text-black shadow-glow transition hover:scale-105">
+            <Link href={withReturnTo(`/watch/${active.slug}`, "/")} aria-label={`Xem phim ${active.name}`} className="grid h-16 w-16 place-items-center rounded-full bg-gold text-black shadow-glow transition hover:scale-105">
               <Play className="ml-1 h-8 w-8 fill-black" />
             </Link>
-            <Link href={`/movie/${active.slug}`} aria-label={`Chi tiết phim ${active.name}`} className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
+            <Link href={withReturnTo(`/movie/${active.slug}`, "/")} aria-label={`Chi tiết phim ${active.name}`} className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
               <Info className="h-7 w-7" />
             </Link>
           </div>

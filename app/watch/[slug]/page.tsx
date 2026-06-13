@@ -7,6 +7,7 @@ import { IframePlayerFacade } from "@/components/IframePlayerFacade";
 import { WatchRecorder } from "@/components/WatchRecorder";
 import { episodeWatchKey, findEpisodeByWatchKey } from "@/lib/episodes";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
+import { withReturnTo } from "@/lib/utils";
 
 const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod.HlsVideo), {
   loading: () => (
@@ -18,7 +19,7 @@ const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod
 
 export const revalidate = 300;
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string; player?: string; mirror?: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string; player?: string; mirror?: string; returnTo?: string }> };
 
 const vidsrcHosts = new Set([
   "vsembed.ru",
@@ -59,6 +60,16 @@ function resolveEmbedUrl(src: string | undefined, options: { mobile: boolean; mi
     return url.toString();
   } catch {
     return src;
+  }
+}
+
+function safeReturnPath(value?: string) {
+  if (!value) return "";
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "";
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : "";
   }
 }
 
@@ -114,7 +125,8 @@ export default async function WatchPage(props: Props) {
   const userAgent = headerStore.get("user-agent") || "";
   const movie = await getMovie(params.slug);
   const serverIndex = Math.max(0, Number(searchParams?.server || "0"));
-  const server = movie.episodes[serverIndex] || movie.episodes[0];
+  const actualServerIndex = movie.episodes[serverIndex] ? serverIndex : 0;
+  const server = movie.episodes[actualServerIndex] || movie.episodes[0];
   const epKey = searchParams?.ep;
   const episode = findEpisodeByWatchKey(server, epKey);
   const embed = episode?.linkEmbed;
@@ -125,6 +137,8 @@ export default async function WatchPage(props: Props) {
   const mobileUA = isMobileUserAgent(userAgent);
   const playerEmbed = resolveEmbedUrl(embed, { mobile: mobileUA, mirror: searchParams?.mirror });
   const useEmbedPlayer = Boolean(playerEmbed) && (forceEmbed || (mobileUA && !forceHls));
+  const returnTo = safeReturnPath(searchParams?.returnTo);
+  const movieHref = withReturnTo(`/movie/${movie.slug}`, returnTo);
 
   return (
     <article className="min-h-screen bg-black">
@@ -136,7 +150,7 @@ export default async function WatchPage(props: Props) {
       <link rel="dns-prefetch" href="https://vsembed.su" />
       <WatchRecorder movie={movie} />
       <header className="watch-header sticky top-0 z-40 flex items-center gap-3 border-b border-white/10 bg-black/90 px-3 py-2 backdrop-blur-xl">
-        <Link href={`/movie/${movie.slug}`} aria-label={`Quay lại ${movie.name}`} className="watch-header-action grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
+        <Link href={movieHref} aria-label={`Quay lại ${movie.name}`} className="watch-header-action grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="watch-header-content min-w-0 flex-1">
@@ -173,9 +187,9 @@ export default async function WatchPage(props: Props) {
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {sv.serverData.map((ep, epIndex) => {
                 const currentKey = episode ? episodeWatchKey(episode, server?.serverData.indexOf(episode) ?? 0) : "";
-                const active = svIndex === serverIndex && (episodeWatchKey(ep, epIndex) === currentKey || epIndex === 0 && !epKey);
+                const active = svIndex === actualServerIndex && (episodeWatchKey(ep, epIndex) === currentKey || epIndex === 0 && !epKey);
                 return (
-                  <Link key={`${ep.slug || ep.name}-${epIndex}`} href={`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
+                  <Link key={`${ep.slug || ep.name}-${epIndex}`} replace href={withReturnTo(`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`, returnTo)} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
                     {ep.name || epIndex + 1}
                   </Link>
                 );

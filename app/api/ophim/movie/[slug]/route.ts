@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sharedCacheHeaders } from "@/lib/httpCache";
 import { getMovie } from "@/lib/ophim";
 
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ export async function GET(_: Request, props: Params) {
   try {
     const data = await getMovie(params.slug);
     return NextResponse.json(data, {
-      headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=1800" }
+      headers: sharedCacheHeaders(900, 86400)
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 502 });

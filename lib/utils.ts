@@ -24,22 +24,22 @@ export function normalizeEpisodeName(value?: string, index = 0) {
   return clean.toLowerCase().startsWith("tập") ? clean : `Tập ${clean}`;
 }
 
-export function proxiedImage(src?: string, width?: number, quality?: number) {
+export function directImage(src?: string) {
   if (!src) return "";
-  if (src.startsWith("/api/image")) return src;
-  if (src.startsWith("/")) return src;
-  const params = new URLSearchParams({ url: src });
-  if (width) params.set("w", String(width));
-  if (quality) params.set("q", String(quality));
-  return `/api/image?${params.toString()}`;
+  return src;
 }
 
-export function proxiedImageSrcSet(src: string | undefined, widths: number[], quality?: number) {
-  if (!src || src.startsWith("/") || src.startsWith("/api/image")) return undefined;
-  return widths.map((width) => `${proxiedImage(src, width, quality)} ${width}w`).join(", ");
+export function directImageSrcSet(src?: string) {
+  if (!src) return undefined;
+  return src;
 }
 
-export function proxiedImageCandidateSrcSet(src: string | undefined, candidates: { width: number; quality?: number }[]) {
-  if (!src || src.startsWith("/") || src.startsWith("/api/image")) return undefined;
-  return candidates.map(({ width, quality }) => `${proxiedImage(src, width, quality)} ${width}w`).join(", ");
+export function encodedReturnTo(path: string) {
+  return encodeURIComponent(path);
+}
+
+export function withReturnTo(href: string, returnTo?: string) {
+  if (!returnTo) return href;
+  const separator = href.includes("?") ? "&" : "?";
+  return `${href}${separator}returnTo=${encodedReturnTo(returnTo)}`;
 }

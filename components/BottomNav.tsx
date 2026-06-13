@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Clapperboard, Film, Home, MonitorPlay, Settings, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,11 +16,18 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+  const contextPath = pathname.startsWith("/movie/") || pathname.startsWith("/watch/")
+    ? safeContextPath(returnTo)
+    : "";
+
   return (
     <nav className="bottom-nav fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[720px] border-t border-white/5 bg-[#0b0d13]/95 px-2 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
       <div className="bottom-nav-grid grid grid-cols-6 gap-1">
         {items.map((item) => {
-          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const activePath = contextPath || pathname;
+          const active = activePath === item.href || (item.href !== "/" && activePath.startsWith(item.href));
           const Icon = item.icon;
           return (
             <Link
@@ -39,4 +46,14 @@ export function BottomNav() {
       </div>
     </nav>
   );
+}
+
+function safeContextPath(value: string | null) {
+  if (!value) return "";
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "";
+  } catch {
+    return value.startsWith("/") && !value.startsWith("//") ? value : "";
+  }
 }

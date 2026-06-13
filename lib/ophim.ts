@@ -12,11 +12,15 @@ import type {
   SourceTaxonomyPayload
 } from "@/lib/types";
 import { buildSmartSpotlight, type SpotlightCandidate } from "@/lib/spotlight";
-import { detailCacheTtlSeconds, listCacheTtlSeconds, readJsonCache, searchCacheTtlSeconds, taxonomyCacheTtlSeconds, writeJsonCache } from "@/lib/cache";
 import { buildVsembedServer } from "@/lib/vsembed";
 import { normalizedEpisodeName, normalizedEpisodeSlug } from "@/lib/episodes";
 
 const BASE_URL = (process.env.OPHIM_BASE_URL || "https://ophim1.com").replace(/\/$/, "");
+const DETAIL_REVALIDATE_SECONDS = 900;
+const LIST_REVALIDATE_SECONDS = 600;
+const SEARCH_REVALIDATE_SECONDS = 300;
+const TAXONOMY_REVALIDATE_SECONDS = 86400;
+const FETCH_TIMEOUT_MS = 8000;
 const CDN_FALLBACKS = [
   "https://img.ophim.live/uploads/movies",
   "https://img.ophim.cc/uploads/movies"
@@ -56,62 +60,25 @@ function normalizeCategorySlug(category?: string) {
 }
 
 function jsonFetchOptions(revalidate: number) {
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   return {
     next: { revalidate },
+    signal,
     headers: {
       "User-Agent": "film.bluesia.net/3.0.2",
       "Accept": "application/json"
     }
   } as RequestInit;
-}
-
-function jsonNoStoreFetchOptions() {
-  return {
-    cache: "no-store",
-    headers: {
-      "User-Agent": "film.bluesia.net/3.0.2",
-      "Accept": "application/json"
-    }
-  } as RequestInit;
-}
-
-function jsonCachePolicy(path: string, fallbackSeconds = 600) {
-  if (/\/v1\/api\/danh-sach\//.test(path) || /\/danh-sach\//.test(path) || /\/quoc-gia\//.test(path)) {
-    return { namespace: "metadata-list", ttlSeconds: listCacheTtlSeconds() };
-  }
-  if (/\/v1\/api\/tim-kiem/.test(path)) {
-    return { namespace: "metadata-search", ttlSeconds: searchCacheTtlSeconds() };
-  }
-  if (/^\/phim\//.test(path)) {
-    return { namespace: "metadata-detail", ttlSeconds: detailCacheTtlSeconds() };
-  }
-  if (/^\/(the-loai|quoc-gia)$/.test(path)) {
-    return { namespace: "metadata-taxonomy", ttlSeconds: taxonomyCacheTtlSeconds() };
-  }
-  return { namespace: "metadata-json", ttlSeconds: fallbackSeconds };
 }
 
 async function fetchJson<T>(path: string, revalidate = 600): Promise<T> {
   const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
-  const policy = jsonCachePolicy(path, revalidate);
-  const cacheKey = `${url}`;
-  const cached = await readJsonCache<T>(policy.namespace, cacheKey, policy.ttlSeconds);
-  if (cached) return cached;
-
-  try {
-    const res = await fetch(url, jsonFetchOptions(policy.ttlSeconds));
-    if (!res.ok) {
-      throw new Error(`OPhim request failed ${res.status}: ${url}`);
-    }
-
-    const data = await res.json() as T;
-    await writeJsonCache(policy.namespace, cacheKey, data, url);
-    return data;
-  } catch (error) {
-    const stale = await readJsonCache<T>(policy.namespace, cacheKey, policy.ttlSeconds, true);
-    if (stale) return stale;
-    throw error;
+  const res = await fetch(url, jsonFetchOptions(revalidate));
+  if (!res.ok) {
+    throw new Error(`OPhim request failed ${res.status}: ${url}`);
   }
+
+  return await res.json() as T;
 }
 
 function sourceEpisodeServers(payload?: SourceMoviePayload) {
@@ -136,31 +103,16 @@ function sourceMoviePayloadNeedsPlayableRefresh(payload?: SourceMoviePayload) {
 async function fetchMoviePayload(slug: string): Promise<SourceMoviePayload> {
   const path = `/phim/${encodeURIComponent(slug)}`;
   const url = `${BASE_URL}${path}`;
-  const policy = jsonCachePolicy(path, 300);
-  const cached = await readJsonCache<SourceMoviePayload>(policy.namespace, url, policy.ttlSeconds);
-
-  if (cached && !sourceMoviePayloadNeedsPlayableRefresh(cached)) {
-    return cached;
+  const res = await fetch(url, jsonFetchOptions(DETAIL_REVALIDATE_SECONDS));
+  if (!res.ok) {
+    throw new Error(`OPhim request failed ${res.status}: ${url}`);
   }
 
-  try {
-    const res = await fetch(url, cached ? jsonNoStoreFetchOptions() : jsonFetchOptions(policy.ttlSeconds));
-    if (!res.ok) {
-      throw new Error(`OPhim request failed ${res.status}: ${url}`);
-    }
-
-    const data = await res.json() as SourceMoviePayload;
-    if (!cached || !sourceMoviePayloadNeedsPlayableRefresh(data)) {
-      await writeJsonCache(policy.namespace, url, data, url);
-      return data;
-    }
-
-    return cached;
-  } catch (error) {
-    const stale = cached || await readJsonCache<SourceMoviePayload>(policy.namespace, url, policy.ttlSeconds, true);
-    if (stale) return stale;
-    throw error;
+  const data = await res.json() as SourceMoviePayload;
+  if (sourceMoviePayloadNeedsPlayableRefresh(data)) {
+    return fetchJson<SourceMoviePayload>(path, 60);
   }
+  return data;
 }
 
 function cdnMovieFolder(cdn?: string) {
@@ -281,14 +233,14 @@ export async function getList(type: string, page = 1, limit = 24, country?: stri
 
   if (apiListType === "phim-moi-cap-nhat") {
     try {
-      payload = await fetchJson<SourceListPayload>(`/v1/api/danh-sach/phim-moi-cap-nhat?${query.toString()}`, 300);
+      payload = await fetchJson<SourceListPayload>(`/v1/api/danh-sach/phim-moi-cap-nhat?${query.toString()}`, LIST_REVALIDATE_SECONDS);
     } catch {
       const legacyQuery = new URLSearchParams({ page: String(safePage) });
       if (countrySlug) legacyQuery.set("country", countrySlug);
-      payload = await fetchJson<SourceListPayload>(`/danh-sach/phim-moi-cap-nhat?${legacyQuery.toString()}`, 300);
+      payload = await fetchJson<SourceListPayload>(`/danh-sach/phim-moi-cap-nhat?${legacyQuery.toString()}`, LIST_REVALIDATE_SECONDS);
     }
   } else {
-    payload = await fetchJson<SourceListPayload>(`/v1/api/danh-sach/${encodeURIComponent(apiListType)}?${query.toString()}`, 600);
+    payload = await fetchJson<SourceListPayload>(`/v1/api/danh-sach/${encodeURIComponent(apiListType)}?${query.toString()}`, LIST_REVALIDATE_SECONDS);
   }
 
   const { items, cdn, data } = getItems(payload);
@@ -308,13 +260,15 @@ export async function getList(type: string, page = 1, limit = 24, country?: stri
 export async function searchMovies(keyword: string, page = 1, limit = 24): Promise<ListPayload> {
   const q = keyword.trim();
   if (!q) return { title: "Tìm kiếm", items: [], page };
-  const payload = await fetchJson<SourceListPayload>(`/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&page=${page}&limit=${limit}`, 300);
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(30, Math.max(6, Number(limit) || 24));
+  const payload = await fetchJson<SourceListPayload>(`/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&page=${safePage}&limit=${safeLimit}`, SEARCH_REVALIDATE_SECONDS);
   const { items, cdn, data } = getItems(payload);
   const pagination = data?.params?.pagination || {};
   return {
     title: `Tìm kiếm: ${q}`,
     items: items.map((item) => normalizeCard(item, cdn)).filter((item: MovieCard) => item.slug),
-    page: Number(pagination?.currentPage || page),
+    page: Number(pagination?.currentPage || safePage),
     totalPages: Number(pagination?.totalPages || 0) || undefined
   };
 }
@@ -400,11 +354,11 @@ export async function getMovie(slug: string): Promise<MovieDetail> {
 }
 
 export async function getCategories() {
-  const payload = await fetchJson<SourceTaxonomyPayload>(`/the-loai`, 3600);
+  const payload = await fetchJson<SourceTaxonomyPayload>(`/the-loai`, TAXONOMY_REVALIDATE_SECONDS);
   return Array.isArray(payload) ? payload : payload?.data || [];
 }
 
 export async function getCountries() {
-  const payload = await fetchJson<SourceTaxonomyPayload>(`/quoc-gia`, 3600);
+  const payload = await fetchJson<SourceTaxonomyPayload>(`/quoc-gia`, TAXONOMY_REVALIDATE_SECONDS);
   return Array.isArray(payload) ? payload : payload?.data || [];
 }

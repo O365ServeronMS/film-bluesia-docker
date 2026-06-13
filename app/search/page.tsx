@@ -12,6 +12,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = params.q || "";
   const page = Math.max(1, Number(params.page || "1"));
+  const returnTo = q ? `/search?q=${encodeURIComponent(q)}${page > 1 ? `&page=${page}` : ""}` : "/search";
   const data = q ? await searchMovies(q, page, 30) : { title: "Tìm kiếm", items: [], page };
 
   return (
@@ -32,7 +33,7 @@ export default async function SearchPage({ searchParams }: Props) {
 
       {data.items.length > 0 ? (
         <section className="grid grid-cols-3 gap-3 px-4 pt-5 sm:grid-cols-4">
-          {data.items.map((movie) => <MovieCard key={movie.slug} movie={movie} compact />)}
+          {data.items.map((movie, index) => <MovieCard key={movie.slug} movie={movie} compact deferImage={index >= 9} returnTo={returnTo} />)}
         </section>
       ) : q ? (
         <div className="mx-4 mt-8 rounded-3xl border border-dashed border-white/15 bg-white/5 p-8 text-center text-sm text-zinc-400">Không tìm thấy kết quả phù hợp.</div>

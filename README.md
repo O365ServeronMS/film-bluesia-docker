@@ -11,6 +11,8 @@ Connect this GitHub repository to Vercel and keep the default Next.js build sett
 - Production environment: `OPHIM_BASE_URL=https://ophim1.com`
 - Production environment: `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net`
 
+The same non-secret production defaults are committed in `.env.production` so Vercel auto deploys do not fall back to heavy upstream OPhim image URLs if the dashboard variable is missing.
+
 Existing Vidsrc/Vsembed environment variables remain supported when needed:
 
 ```bash

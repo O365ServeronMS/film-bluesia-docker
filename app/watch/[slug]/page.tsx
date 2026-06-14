@@ -6,7 +6,9 @@ import { ArrowLeft, ExternalLink, ListVideo } from "lucide-react";
 import { IframePlayerFacade } from "@/components/IframePlayerFacade";
 import { WatchRecorder } from "@/components/WatchRecorder";
 import { episodeWatchKey, findEpisodeByWatchKey } from "@/lib/episodes";
+import { getCachedImageUrl } from "@/lib/images";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
+import { siteUrl } from "@/lib/site";
 import { withReturnTo } from "@/lib/utils";
 
 const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod.HlsVideo), {
@@ -85,14 +87,18 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const movieTitle = movieDisplayTitle(movie);
     const title = `Watching - ${movieTitle}`;
     const description = `Đang xem ${movieTitle} trên Bluesia Cinema`;
-    const image = movie.thumb || movie.poster || "/icon-512.png";
+    const image = getCachedImageUrl(movie.thumb || movie.poster || "/icon-512.png", "d");
 
     return {
       title,
       description,
+      alternates: {
+        canonical: `/watch/${params.slug}`
+      },
       openGraph: {
         title,
         description,
+        url: siteUrl(`/watch/${params.slug}`),
         siteName: "Bluesia Cinema",
         type: "video.movie",
         locale: "vi_VN",

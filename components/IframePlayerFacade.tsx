@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { Play } from "lucide-react";
-import { imageQuality, imageSrc } from "@/lib/images";
+import { getMovieImageSources } from "@/lib/images";
 
 type IframePlayerFacadeProps = {
   src: string;
@@ -13,7 +12,7 @@ type IframePlayerFacadeProps = {
 
 export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadeProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const posterSource = imageSrc(poster);
+  const posterSources = getMovieImageSources(poster);
 
   if (isPlaying) {
     return (
@@ -34,14 +33,17 @@ export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadePro
       className="group relative h-full w-full cursor-pointer overflow-hidden bg-zinc-950 transition duration-300"
     >
       {poster ? (
-        <Image
-          src={posterSource}
-          alt={title}
-          fill
-          sizes="(min-width: 720px) 720px, 100vw"
-          quality={imageQuality("player")}
-          className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-700 ease-out group-hover:scale-105 group-hover:opacity-30"
-        />
+        <picture>
+          <source media="(max-width: 767px)" srcSet={posterSources.mobile} />
+          <img
+            src={posterSources.desktop}
+            alt={title}
+            sizes="(min-width: 720px) 720px, 100vw"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-700 ease-out group-hover:scale-105 group-hover:opacity-30"
+          />
+        </picture>
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">

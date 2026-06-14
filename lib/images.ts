@@ -1,17 +1,197 @@
-export type ImagePreset = "poster" | "backdrop" | "hero" | "suggestion" | "player";
+const IMAGE_CACHE_URL = (process.env.NEXT_PUBLIC_IMAGE_CACHE_URL || "").replace(/\/+$/, "");
+const FALLBACK_IMAGE_SRC = "/icon-512.png";
+const MEDIA_EXTENSIONS = /\.(m3u8|mpd|ts|m4s|mp4|mkv|avi|mov|webm|vtt|srt)(?:[?#].*)?$/i;
+const HEX = "0123456789abcdef";
 
-const imageQualities: Record<ImagePreset, number> = {
-  poster: 68,
-  backdrop: 72,
-  hero: 72,
-  suggestion: 55,
-  player: 68
-};
+export type ImageVariant = "m" | "d";
 
-export function imageSrc(src?: string) {
-  return String(src || "").trim();
+function isLocalAsset(src: string) {
+  return src.startsWith("/") || src.startsWith("./") || src.startsWith("../");
 }
 
-export function imageQuality(preset: ImagePreset = "poster") {
-  return imageQualities[preset];
+function cacheHostnames() {
+  const hostnames = new Set(["img.bluesia.net"]);
+  if (!IMAGE_CACHE_URL) return hostnames;
+
+  try {
+    hostnames.add(new URL(IMAGE_CACHE_URL).hostname.toLowerCase());
+  } catch {}
+
+  return hostnames;
+}
+
+export function normalizeImageSourceUrl(src: string): string | null {
+  const direct = src.trim();
+  if (!direct) return null;
+
+  try {
+    const url = new URL(direct);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+    url.hostname = url.hostname.toLowerCase();
+    if (url.hash === "#") url.hash = "";
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function rightRotate(value: number, shift: number) {
+  return (value >>> shift) | (value << (32 - shift));
+}
+
+function toUtf8Bytes(input: string) {
+  const bytes: number[] = [];
+
+  for (let i = 0; i < input.length; i += 1) {
+    let codePoint = input.charCodeAt(i);
+
+    if (codePoint >= 0xd800 && codePoint <= 0xdbff && i + 1 < input.length) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        codePoint = 0x10000 + ((codePoint - 0xd800) << 10) + (next - 0xdc00);
+        i += 1;
+      }
+    }
+
+    if (codePoint < 0x80) {
+      bytes.push(codePoint);
+    } else if (codePoint < 0x800) {
+      bytes.push(0xc0 | (codePoint >>> 6), 0x80 | (codePoint & 0x3f));
+    } else if (codePoint < 0x10000) {
+      bytes.push(0xe0 | (codePoint >>> 12), 0x80 | ((codePoint >>> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+    } else {
+      bytes.push(
+        0xf0 | (codePoint >>> 18),
+        0x80 | ((codePoint >>> 12) & 0x3f),
+        0x80 | ((codePoint >>> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f)
+      );
+    }
+  }
+
+  return bytes;
+}
+
+export function sha256Hex(input: string): string {
+  const words = new Array<number>(64);
+  const bytes = toUtf8Bytes(input);
+  const bitLength = bytes.length * 8;
+
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+
+  for (let shift = 56; shift >= 0; shift -= 8) {
+    bytes.push(Math.floor(bitLength / 2 ** shift) & 0xff);
+  }
+
+  let h0 = 0x6a09e667;
+  let h1 = 0xbb67ae85;
+  let h2 = 0x3c6ef372;
+  let h3 = 0xa54ff53a;
+  let h4 = 0x510e527f;
+  let h5 = 0x9b05688c;
+  let h6 = 0x1f83d9ab;
+  let h7 = 0x5be0cd19;
+
+  const k = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+
+  for (let offset = 0; offset < bytes.length; offset += 64) {
+    for (let i = 0; i < 16; i += 1) {
+      const pos = offset + i * 4;
+      words[i] = (bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3];
+    }
+
+    for (let i = 16; i < 64; i += 1) {
+      const s0 = rightRotate(words[i - 15], 7) ^ rightRotate(words[i - 15], 18) ^ (words[i - 15] >>> 3);
+      const s1 = rightRotate(words[i - 2], 17) ^ rightRotate(words[i - 2], 19) ^ (words[i - 2] >>> 10);
+      words[i] = (words[i - 16] + s0 + words[i - 7] + s1) >>> 0;
+    }
+
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+    let f = h5;
+    let g = h6;
+    let h = h7;
+
+    for (let i = 0; i < 64; i += 1) {
+      const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + s1 + ch + k[i] + words[i]) >>> 0;
+      const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (s0 + maj) >>> 0;
+
+      h = g;
+      g = f;
+      f = e;
+      e = (d + temp1) >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (temp1 + temp2) >>> 0;
+    }
+
+    h0 = (h0 + a) >>> 0;
+    h1 = (h1 + b) >>> 0;
+    h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0;
+    h5 = (h5 + f) >>> 0;
+    h6 = (h6 + g) >>> 0;
+    h7 = (h7 + h) >>> 0;
+  }
+
+  return [h0, h1, h2, h3, h4, h5, h6, h7]
+    .map((word) => {
+      let out = "";
+      for (let shift = 28; shift >= 0; shift -= 4) out += HEX[(word >>> shift) & 0xf];
+      return out;
+    })
+    .join("");
+}
+
+export function isMediaUrl(src: string): boolean {
+  return MEDIA_EXTENSIONS.test(src.trim());
+}
+
+export function getCachedImageUrl(src: string | null | undefined, variant: ImageVariant): string {
+  const direct = String(src || "").trim();
+  if (!direct) return FALLBACK_IMAGE_SRC;
+  if (isLocalAsset(direct) || direct.startsWith("data:") || direct.startsWith("blob:")) return direct;
+  if (isMediaUrl(direct)) return direct;
+
+  const normalized = normalizeImageSourceUrl(direct);
+  if (!normalized) return FALLBACK_IMAGE_SRC;
+
+  try {
+    if (cacheHostnames().has(new URL(normalized).hostname.toLowerCase())) return normalized;
+  } catch {
+    return FALLBACK_IMAGE_SRC;
+  }
+
+  if (!IMAGE_CACHE_URL) return normalized;
+
+  const hash = sha256Hex(normalized);
+  return `${IMAGE_CACHE_URL}/i/${variant}/${hash}.webp?url=${encodeURIComponent(normalized)}`;
+}
+
+export function getMovieImageSources(src: string | null | undefined) {
+  return {
+    mobile: getCachedImageUrl(src, "m"),
+    desktop: getCachedImageUrl(src, "d")
+  };
 }

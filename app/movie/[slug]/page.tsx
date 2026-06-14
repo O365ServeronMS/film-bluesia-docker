@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
 import { episodeWatchKey } from "@/lib/episodes";
-import { imageQuality, imageSrc } from "@/lib/images";
+import { getCachedImageUrl, getMovieImageSources } from "@/lib/images";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
+import { siteUrl } from "@/lib/site";
 import { ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
 
 export const revalidate = 300;
@@ -33,14 +33,18 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const movie = await getMovie(params.slug);
     const title = `Bluesia Cinema - ${movieDisplayTitle(movie)}`;
     const description = stripHtml(movie.content) || "Góc nhỏ của người đam mê phim";
-    const image = movie.thumb || movie.poster || "/icon-512.png";
+    const image = getCachedImageUrl(movie.thumb || movie.poster || "/icon-512.png", "d");
 
     return {
       title,
       description,
+      alternates: {
+        canonical: `/movie/${params.slug}`
+      },
       openGraph: {
         title,
         description,
+        url: siteUrl(`/movie/${params.slug}`),
         siteName: "Bluesia Cinema",
         type: "video.movie",
         locale: "vi_VN",
@@ -74,22 +78,25 @@ export default async function MoviePage(props: Props) {
   const firstEp = movie.episodes[0]?.serverData[0];
   const heroImage = movie.thumb || movie.poster;
   const posterImage = movie.poster || movie.thumb;
-  const heroImageSource = imageSrc(heroImage);
-  const posterImageSource = imageSrc(posterImage);
+  const heroImageSources = getMovieImageSources(heroImage);
+  const posterImageSources = getMovieImageSources(posterImage);
 
   return (
     <article>
       <section className="relative min-h-[560px] overflow-hidden">
         {heroImage ? (
-          <Image
-            src={heroImageSource}
-            alt={movie.name}
-            fill
-            priority
-            sizes="(min-width: 720px) 720px, 100vw"
-            quality={imageQuality("backdrop")}
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
-          />
+          <picture>
+            <source media="(max-width: 767px)" srcSet={heroImageSources.mobile} />
+            <img
+              src={heroImageSources.desktop}
+              alt={movie.name}
+              sizes="(min-width: 720px) 720px, 100vw"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover opacity-60"
+            />
+          </picture>
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-[#07090f]/80 to-[#07090f]" />
         <div className="relative z-10 px-4 pb-8 pt-5">
@@ -99,15 +106,19 @@ export default async function MoviePage(props: Props) {
           <div className="mt-10 flex gap-4">
             <div className="w-36 shrink-0 overflow-hidden rounded-3xl bg-zinc-900 shadow-2xl ring-1 ring-white/10">
               {posterImage ? (
-                <Image
-                  src={posterImageSource}
-                  alt={movie.name}
-                  width={144}
-                  height={216}
-                  sizes="144px"
-                  quality={imageQuality("poster")}
-                  className="aspect-[2/3] h-full w-full object-cover"
-                />
+                <picture>
+                  <source media="(max-width: 767px)" srcSet={posterImageSources.mobile} />
+                  <img
+                    src={posterImageSources.desktop}
+                    alt={movie.name}
+                    width={144}
+                    height={216}
+                    sizes="144px"
+                    loading="eager"
+                    decoding="async"
+                    className="aspect-[2/3] h-full w-full object-cover"
+                  />
+                </picture>
               ) : null}
             </div>
             <div className="min-w-0 flex-1 pt-4">

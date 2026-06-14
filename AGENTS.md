@@ -2,7 +2,7 @@
 
 ## Project Purpose
 
-FilmBluesia is a mobile-first movie discovery and watch app for `film.bluesia.net`. The migration target is Next.js App Router on Vercel Free while preserving the current user-facing UX: home spotlight, category lists, search, movie detail, watch playback, favorites, history, bottom navigation, and SEO/PWA basics.
+FilmBluesia is a mobile-first movie discovery and watch app for `phim.bluesia.net`. The production frontend target is Next.js App Router on Vercel Free while preserving the current user-facing UX: home spotlight, category lists, search, movie detail, watch playback, favorites, history, bottom navigation, and SEO/PWA basics.
 
 ## Feature Preservation Checklist
 
@@ -11,7 +11,7 @@ FilmBluesia is a mobile-first movie discovery and watch app for `film.bluesia.ne
 - `/search` and top search keep debounced suggestions and result grids.
 - `/movie/[slug]` keeps metadata, poster/backdrop, ratings, episode list, watch CTA, and local actions.
 - `/watch/[slug]` keeps episode/server selection, OPhim HLS playback, Vidsrc/embed facade, and watch history recording.
-- Favorites and history stay browser-only through `localStorage`; never add server persistence without explicit approval.
+- Favorites and history stay browser-only through `localStorage` under the `phim.bluesia.net:*` namespace; never add server persistence without explicit approval.
 - Bottom mobile navigation stays fixed, safe-area aware, and aligned to the `max-w-[720px]` shell.
 - Preserve source/list context through `returnTo=<encoded path+search>` between list, movie, and watch pages.
 - SEO metadata, robots, sitemap, manifest, icons, and share metadata should remain practical without mass static generation.
@@ -35,6 +35,23 @@ FilmBluesia is a mobile-first movie discovery and watch app for `film.bluesia.ne
 - Keep route handlers cached, rate-conscious, small, and time-bounded.
 - Keep user-specific data in `localStorage`.
 
+## Vercel Free Quota Snapshot
+
+User-provided Vercel dashboard snapshot for the team `tunhan9x`, last 30 days, captured 2026-06-14:
+
+- Image Optimization - Cache Writes: 180K / 100K, exceeded free limit
+- Image Optimization - Transformations: 5.4K / 5K, exceeded free limit
+- Fast Origin Transfer: 7.26 GB / 10 GB
+- Fluid Active CPU: 21m 39s / 4h
+- Fast Data Transfer: 8.62 GB / 100 GB
+- Function Invocations: 53K / 1M
+- Edge Requests: 38K / 1M
+- Fluid Provisioned Memory: 1.7 GB-Hrs / 360 GB-Hrs
+- Image Optimization - Cache Reads: 911 / 300K
+- ISR Reads: 1.4K / 1M
+
+Treat Vercel Image Optimization as exhausted and off-limits for remote movie art. Avoid any `next/image` or `/_next/image` path that can create transformations/cache writes unless explicitly approved. Fast Origin Transfer is still a close secondary quota, so also avoid origin egress, video proxying, uncached metadata fetches, or request-wide edge/function work without explicit approval.
+
 ## Data Fetching and Cache Policy
 
 - OPhim metadata normalization belongs in framework-neutral `lib/` modules.
@@ -49,8 +66,12 @@ FilmBluesia is a mobile-first movie discovery and watch app for `film.bluesia.ne
 
 ## Image and Video Policies
 
-- Use direct upstream/CDN poster URLs by default with stable aspect ratios and fallback UI.
+- Use native `<img>`/`<picture>` with stable aspect ratios and fallback UI. When `NEXT_PUBLIC_IMAGE_CACHE_URL` is set, poster/backdrop image URLs may be rewritten only to the external cache variants `https://img.bluesia.net/i/m/<sha256>.webp?url=<encoded-normalized-upstream-image-url>` and `https://img.bluesia.net/i/d/<sha256>.webp?url=<encoded-normalized-upstream-image-url>`.
+- Legacy `https://img.bluesia.net/image?url=...` is VPS backward compatibility only. New frontend code must not generate it.
+- Only two image variants are allowed: `m` for mobile, VPS max width 480px WebP quality 75, and `d` for desktop, VPS max width 960px WebP quality 75. Do not add width, quality, DPR, format, AVIF, arbitrary width lists, or per-component transformation options.
+- Native `<img>` warnings are intentional because Vercel Image Optimization is off-limits for remote movie art.
 - Do not reintroduce `/api/image`, Sharp transforms, or Vercel image optimization for poster grids unless explicitly approved and documented.
+- Never send HLS, video, iframe, embed, or subtitle URLs to `img.bluesia.net`.
 - OPhim HLS playback must run client-side with `hls.js` or native HLS fallback.
 - Lazy-load player code; do not load HLS/player bundles on home/list/movie pages.
 - Default HLS buffering must remain conservative. Five-minute buffering is only an explicit good-network/aggressive mode cap, not the default.

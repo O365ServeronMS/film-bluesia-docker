@@ -2,20 +2,16 @@
 
 import { KeyboardEvent, TouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight, Info, Play, Sparkles, Star } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
-import { imageQuality, imageSrc } from "@/lib/images";
+import { getMovieImageSources } from "@/lib/images";
 import { baseSpotlightScore, normalizedLabelSet } from "@/lib/spotlight";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
 const SLIDE_INTERVAL_MS = 5000;
-const FAV_KEY = "film.bluesia.net:favorites";
-const HISTORY_KEY = "film.bluesia.net:history";
-const LEGACY_FAV_KEY = "bluesia:favorites";
-const LEGACY_HISTORY_KEY = "bluesia:history";
-const LOCAL_MOVIES_UPDATED_EVENT = "film.bluesia.net:local-movies-updated";
-const LEGACY_LOCAL_MOVIES_UPDATED_EVENT = "bluesia:local-movies-updated";
+const FAV_KEY = "phim.bluesia.net:favorites";
+const HISTORY_KEY = "phim.bluesia.net:history";
+const LOCAL_MOVIES_UPDATED_EVENT = "phim.bluesia.net:local-movies-updated";
 
 type StoredMovie = MovieCard & { savedAt?: number };
 type PersonalData = { favorites: StoredMovie[]; history: StoredMovie[] };
@@ -36,12 +32,6 @@ function readStoredRaw(key: string): StoredMovie[] {
   } catch {
     return [];
   }
-}
-
-function readStored(key: string, legacyKey?: string): StoredMovie[] {
-  const current = readStoredRaw(key);
-  if (current.length || !legacyKey) return current;
-  return readStoredRaw(legacyKey);
 }
 
 function addWeight(map: Map<string, number>, labels: Set<string>, weight: number) {
@@ -119,8 +109,8 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
   useEffect(() => {
     const refreshPersonalData = () => {
       setPersonalData({
-        favorites: readStored(FAV_KEY, LEGACY_FAV_KEY),
-        history: readStored(HISTORY_KEY, LEGACY_HISTORY_KEY)
+        favorites: readStoredRaw(FAV_KEY),
+        history: readStoredRaw(HISTORY_KEY)
       });
     };
 
@@ -128,13 +118,11 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
     window.addEventListener("storage", refreshPersonalData);
     window.addEventListener("focus", refreshPersonalData);
     window.addEventListener(LOCAL_MOVIES_UPDATED_EVENT, refreshPersonalData);
-    window.addEventListener(LEGACY_LOCAL_MOVIES_UPDATED_EVENT, refreshPersonalData);
 
     return () => {
       window.removeEventListener("storage", refreshPersonalData);
       window.removeEventListener("focus", refreshPersonalData);
       window.removeEventListener(LOCAL_MOVIES_UPDATED_EVENT, refreshPersonalData);
-      window.removeEventListener(LEGACY_LOCAL_MOVIES_UPDATED_EVENT, refreshPersonalData);
     };
   }, []);
 
@@ -153,7 +141,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
   const visibleIndex = activeIndex < slides.length ? activeIndex : 0;
   const active = slides[visibleIndex];
   const activeImage = active.thumb || active.poster;
-  const activeImageSource = imageSrc(activeImage);
+  const activeImageSources = getMovieImageSources(activeImage);
   const isPersonalized = Boolean(personalData && (personalData.favorites.length || personalData.history.length));
   const canNavigate = slides.length > 1;
 
@@ -209,16 +197,18 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
         aria-label="Smart Spotlight"
       >
         {activeImage && (
-          <Image
-            key={`${active.slug}-${activeImage}`}
-            src={activeImageSource}
-            sizes="(min-width: 720px) 688px, calc(100vw - 32px)"
-            alt={active.name}
-            fill
-            priority={visibleIndex === 0}
-            quality={imageQuality("hero")}
-            className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity duration-700"
-          />
+          <picture key={`${active.slug}-${activeImage}`}>
+            <source media="(max-width: 767px)" srcSet={activeImageSources.mobile} />
+            <img
+              src={activeImageSources.desktop}
+              sizes="(min-width: 720px) 688px, calc(100vw - 32px)"
+              alt={active.name}
+              loading={visibleIndex === 0 ? "eager" : "lazy"}
+              fetchPriority={visibleIndex === 0 ? "high" : "auto"}
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity duration-700"
+            />
+          </picture>
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

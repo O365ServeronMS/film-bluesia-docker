@@ -65,7 +65,7 @@ function jsonFetchOptions(revalidate: number) {
     next: { revalidate },
     signal,
     headers: {
-      "User-Agent": "film.bluesia.net/3.0.2",
+      "User-Agent": "phim.bluesia.net/6.0.1",
       "Accept": "application/json"
     }
   } as RequestInit;

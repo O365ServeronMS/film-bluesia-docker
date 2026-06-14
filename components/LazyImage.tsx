@@ -1,18 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { imageQuality, type ImagePreset } from "@/lib/images";
 
 type LazyImageProps = {
   src: string;
+  mobileSrc?: string;
   sizes?: string;
   alt: string;
-  preset?: ImagePreset;
   className?: string;
 };
 
-export function LazyImage({ src, sizes, alt, preset = "poster", className }: LazyImageProps) {
+export function LazyImage({ src, mobileSrc, sizes, alt, className }: LazyImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -37,14 +35,17 @@ export function LazyImage({ src, sizes, alt, preset = "poster", className }: Laz
   return (
     <div ref={containerRef} className="h-full w-full">
       {visible ? (
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          sizes={sizes}
-          quality={imageQuality(preset)}
-          className={className}
-        />
+        <picture>
+          {mobileSrc ? <source media="(max-width: 767px)" srcSet={mobileSrc} /> : null}
+          <img
+            src={src}
+            alt={alt}
+            sizes={sizes}
+            loading="lazy"
+            decoding="async"
+            className={className}
+          />
+        </picture>
       ) : (
         <div className="h-full w-full bg-zinc-900" />
       )}

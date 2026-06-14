@@ -1,19 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  images: {
-    formats: ["image/webp"],
-    deviceSizes: [390, 720, 960],
-    imageSizes: [44, 88, 132, 144, 180, 260, 360],
-    qualities: [55, 68, 72],
-    minimumCacheTTL: 86400,
-    remotePatterns: [
-      { protocol: "https", hostname: "img.ophim.live", pathname: "/uploads/movies/**" },
-      { protocol: "https", hostname: "img.ophim.cc", pathname: "/uploads/movies/**" },
-      { protocol: "https", hostname: "ophim.live", pathname: "/uploads/movies/**" },
-      { protocol: "https", hostname: "ophim.cc", pathname: "/uploads/movies/**" }
-    ]
-  },
   async headers() {
     return [
       {

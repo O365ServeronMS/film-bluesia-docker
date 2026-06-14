@@ -1,9 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Heart, Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import type { MovieCard as MovieCardType } from "@/lib/types";
-import { imageQuality, imageSrc } from "@/lib/images";
+import { getMovieImageSources } from "@/lib/images";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
 export function MovieCard({
@@ -22,7 +21,7 @@ export function MovieCard({
   returnTo?: string;
 }) {
   const image = movie.poster || movie.thumb;
-  const imageSource = imageSrc(image);
+  const imageSources = getMovieImageSources(image);
   const imageSizes = compact ? "(min-width: 720px) 168px, 31vw" : "(min-width: 720px) 240px, 50vw";
   const imageClassName = "h-full w-full object-cover transition duration-500 group-hover:scale-105";
   const Title = headingLevel === 2 ? "h2" : "h3";
@@ -34,22 +33,25 @@ export function MovieCard({
           {image ? (
             deferImage && !priority ? (
               <LazyImage
-                src={imageSource}
+                src={imageSources.desktop}
+                mobileSrc={imageSources.mobile}
                 sizes={imageSizes}
                 alt={movie.name}
-                preset="poster"
                 className={imageClassName}
               />
             ) : (
-              <Image
-                src={imageSource}
-                sizes={imageSizes}
-                alt={movie.name}
-                fill
-                priority={priority}
-                quality={imageQuality("poster")}
-                className={imageClassName}
-              />
+              <picture>
+                <source media="(max-width: 767px)" srcSet={imageSources.mobile} />
+                <img
+                  src={imageSources.desktop}
+                  sizes={imageSizes}
+                  alt={movie.name}
+                  loading={priority ? "eager" : "lazy"}
+                  fetchPriority={priority ? "high" : "auto"}
+                  decoding="async"
+                  className={imageClassName}
+                />
+              </picture>
             )
           ) : (
             <div className="grid h-full place-items-center px-4 text-center text-sm text-zinc-500">Không có ảnh</div>

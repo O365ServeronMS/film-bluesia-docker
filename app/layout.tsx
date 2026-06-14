@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Suspense, type ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { BottomNav } from "@/components/BottomNav";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://film.bluesia.net"),
+  metadataBase: new URL(SITE_URL),
   title: "Bluesia Cinema",
   description: "Góc nhỏ của người đam mê phim",
   applicationName: "Bluesia Cinema",

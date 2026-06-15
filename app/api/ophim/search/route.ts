@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sharedCacheHeaders } from "@/lib/httpCache";
+import { withSignedListImages } from "@/lib/movie-images.server";
 import { searchMovies } from "@/lib/ophim";
 
 export const runtime = "nodejs";
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
     const keyword = req.nextUrl.searchParams.get("keyword") || "";
     const page = Number(req.nextUrl.searchParams.get("page") || "1");
     const limit = Number(req.nextUrl.searchParams.get("limit") || "24");
-    const data = await searchMovies(keyword, page, limit);
+    const data = withSignedListImages(await searchMovies(keyword, page, limit));
     return NextResponse.json(data, {
       headers: sharedCacheHeaders(300, 1800, 30)
     });

@@ -10,6 +10,8 @@ Connect this GitHub repository to Vercel and keep the default Next.js build sett
 - Production environment: `NEXT_PUBLIC_SITE_URL=https://phim.bluesia.net`
 - Production environment: `OPHIM_BASE_URL=https://ophim1.com`
 - Production environment: `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net`
+- Production environment: `IMAGE_CACHE_SIGNING_SECRET=<server-only shared secret>`
+- Production environment: `IMAGE_SIGNATURE_VERSION=v1`
 
 The same non-secret production defaults are committed in `.env.production` so Vercel auto deploys do not fall back to heavy upstream OPhim image URLs if the dashboard variable is missing.
 
@@ -24,20 +26,23 @@ VSEMBED_MOBILE_EMBED_HOST=vsembed.su
 
 Remote movie posters and backdrops render with native `<img>`/`<picture>` tags. Do not use `next/image` for remote movie art, do not create `/api/image`, and do not proxy image binaries through Vercel. Native `<img>` lint warnings are intentional for this architecture.
 
-The separate image cache domain `https://img.bluesia.net` is owned by another VPS/Docker project. Set `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net` to route poster/backdrop image URLs through that external cache.
+The separate image cache domain `https://img.bluesia.net` is owned by another VPS/Docker project. Set `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net` plus the server-only `IMAGE_CACHE_SIGNING_SECRET` to route poster/backdrop image URLs through that external cache without making it an open proxy.
 
 Canonical frontend-generated image cache URLs use exactly two fixed variants:
 
 ```text
-https://img.bluesia.net/i/m/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>
-https://img.bluesia.net/i/d/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>
+https://img.bluesia.net/i/m/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>
+https://img.bluesia.net/i/d/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>
 ```
 
 - `m`: mobile, VPS max width 480px, WebP quality 75.
 - `d`: desktop, VPS max width 960px, WebP quality 75.
 - No frontend width, quality, DPR, format, AVIF, or arbitrary variant API is allowed.
 - The hash is SHA-256 hex of the normalized upstream image URL only; the variant is represented only by `/i/m/` or `/i/d/`.
-- Legacy `https://img.bluesia.net/image?url=...` is VPS backward compatibility only. New frontend code must not generate it.
+- The HMAC payload is exactly `version + "\n" + variant + "\n" + hash + "\n" + normalizedUrl`.
+- Signing is only invoked for trusted OPhim server-side movie data/API responses, never arbitrary client input.
+- `IMAGE_CACHE_SIGNING_SECRET` is server-only, must not use `NEXT_PUBLIC_`, and must not be referenced by Client Components.
+- Legacy `https://img.bluesia.net/image?url=...&sig=v1...` is VPS backward compatibility only. New frontend code must not generate it.
 
 Video, HLS playlists, HLS chunks, iframe media, and embed media must not be proxied through Vercel or through `img.bluesia.net`.
 

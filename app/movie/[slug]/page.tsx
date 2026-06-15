@@ -3,7 +3,9 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Play, Star, Users } from "lucide-react";
 import { MovieActions } from "@/components/LocalMovieActions";
 import { episodeWatchKey } from "@/lib/episodes";
-import { getCachedImageUrl, getMovieImageSources } from "@/lib/images";
+import { getPreparedMovieImageSources } from "@/lib/images";
+import { signImageCacheUrl } from "@/lib/image-signing.server";
+import { withSignedMovieDetailImages } from "@/lib/movie-images.server";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { siteUrl } from "@/lib/site";
 import { ratingLabel, stripHtml, withReturnTo } from "@/lib/utils";
@@ -30,10 +32,10 @@ function movieDisplayTitle(movie: Awaited<ReturnType<typeof getMovie>>) {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   try {
     const params = await props.params;
-    const movie = await getMovie(params.slug);
+    const movie = withSignedMovieDetailImages(await getMovie(params.slug));
     const title = `Bluesia Cinema - ${movieDisplayTitle(movie)}`;
     const description = stripHtml(movie.content) || "Góc nhỏ của người đam mê phim";
-    const image = getCachedImageUrl(movie.thumb || movie.poster || "/icon-512.png", "d");
+    const image = signImageCacheUrl(movie.thumb || movie.poster || "/icon-512.png", "d", { trustedOphimImage: true });
 
     return {
       title,
@@ -74,12 +76,12 @@ export default async function MoviePage(props: Props) {
   const params = await props.params;
   const searchParams = props.searchParams ? await props.searchParams : {};
   const returnTo = safeReturnPath(searchParams?.returnTo || searchParams?.from);
-  const movie = await getMovie(params.slug);
+  const movie = withSignedMovieDetailImages(await getMovie(params.slug));
   const firstEp = movie.episodes[0]?.serverData[0];
   const heroImage = movie.thumb || movie.poster;
   const posterImage = movie.poster || movie.thumb;
-  const heroImageSources = getMovieImageSources(heroImage);
-  const posterImageSources = getMovieImageSources(posterImage);
+  const heroImageSources = getPreparedMovieImageSources(movie, heroImage);
+  const posterImageSources = getPreparedMovieImageSources(movie, posterImage);
 
   return (
     <article>

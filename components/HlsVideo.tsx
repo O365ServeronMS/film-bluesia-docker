@@ -3,11 +3,9 @@
 import { useEffect, useRef } from "react";
 import Artplayer from "artplayer";
 import Hls from "hls.js";
-import { getCachedImageUrl } from "@/lib/images";
 
 export function HlsVideo({ src, poster }: { src: string; poster?: string }) {
   const artRef = useRef<HTMLDivElement | null>(null);
-  const posterSource = getCachedImageUrl(poster, "d");
 
   useEffect(() => {
     if (!artRef.current || !src) return;
@@ -17,7 +15,7 @@ export function HlsVideo({ src, poster }: { src: string; poster?: string }) {
     const art = new Artplayer({
       container: artRef.current,
       url: src,
-      poster: posterSource,
+      poster,
       volume: 1,
       isLive: false,
       muted: false,
@@ -195,7 +193,7 @@ export function HlsVideo({ src, poster }: { src: string; poster?: string }) {
         art.destroy(false);
       }
     };
-  }, [src, posterSource]);
+  }, [src, poster]);
 
   return <div ref={artRef} className="h-full w-full bg-black" />;
 }

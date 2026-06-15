@@ -1,6 +1,7 @@
 import { HeroSlider } from "@/components/HeroSlider";
 import { SectionRow } from "@/components/SectionRow";
 import { TopBar } from "@/components/TopBar";
+import { withSignedHomeImages } from "@/lib/movie-images.server";
 import { getHome } from "@/lib/ophim";
 import type { Metadata } from "next";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const home = await getHome();
+  const home = withSignedHomeImages(await getHome());
 
   return (
     <>

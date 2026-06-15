@@ -44,6 +44,8 @@ Optional variables:
 
 ```bash
 NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net
+IMAGE_CACHE_SIGNING_SECRET=
+IMAGE_SIGNATURE_VERSION=v1
 VSEMBED_EMBED_BASE_URL=https://vsembed.ru
 VSEMBED_MOBILE_EMBED_HOST=vsembed.su
 ```
@@ -55,8 +57,8 @@ Movie posters and backdrops are rendered with native `<img>` tags. This is delib
 External image-cache URL contract:
 
 ```text
-https://img.bluesia.net/i/m/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>
-https://img.bluesia.net/i/d/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>
+https://img.bluesia.net/i/m/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>
+https://img.bluesia.net/i/d/<sha256-normalized-upstream-url>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>
 ```
 
 Rules:
@@ -66,11 +68,15 @@ Rules:
 - `d` maps to VPS max width 960px and WebP quality 75.
 - The frontend does not send width, quality, DPR, format, AVIF, or arbitrary variant parameters.
 - The hash is SHA-256 hex of the normalized upstream image URL only; the variant lives only in the path segment.
-- Legacy `/image?url=` is VPS backward compatibility only. New frontend-generated URLs must not use it.
+- The HMAC payload is exactly `version + "\n" + variant + "\n" + hash + "\n" + normalizedUrl`.
+- `IMAGE_CACHE_SIGNING_SECRET` is server-only and must never be prefixed with `NEXT_PUBLIC_`.
+- Signing is only invoked for trusted OPhim server-side movie data/API responses, never arbitrary client input.
+- Client Components must not import server signing code; they render server-prepared `posterSources` and `thumbSources`.
+- Legacy `/image?url=` is VPS backward compatibility only, still requires signature, and new frontend-generated URLs must not use it.
 - Only poster/backdrop HTTP(S) image URLs may be sent to `img.bluesia.net`.
 - HLS, video, iframe, embed, and subtitle URLs must never be sent to `img.bluesia.net`.
 - The frontend must not fetch or validate the image binary before rendering.
-- If `NEXT_PUBLIC_IMAGE_CACHE_URL` is missing, direct upstream/CDN image URLs are acceptable fallback.
+- If `NEXT_PUBLIC_IMAGE_CACHE_URL` is missing, direct upstream/CDN image URLs are acceptable fallback. If the signing secret is missing, the server logs one warning and falls back to normalized upstream URLs rather than generating unsigned cache URLs.
 - Native `<img>` warnings are intentional because remote movie art must not use Vercel Image Optimization.
 
 ## Metadata Fetching

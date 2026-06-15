@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { Play } from "lucide-react";
-import { getMovieImageSources } from "@/lib/images";
+import { getMovieImageSources, type MovieImageSources } from "@/lib/images";
 
 type IframePlayerFacadeProps = {
   src: string;
   poster?: string;
+  posterSources?: MovieImageSources;
   title: string;
 };
 
-export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadeProps) {
+export function IframePlayerFacade({ src, poster, posterSources, title }: IframePlayerFacadeProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const posterSources = getMovieImageSources(poster);
+  const imageSources = posterSources || getMovieImageSources(poster);
 
   if (isPlaying) {
     return (
@@ -34,9 +35,9 @@ export function IframePlayerFacade({ src, poster, title }: IframePlayerFacadePro
     >
       {poster ? (
         <picture>
-          <source media="(max-width: 767px)" srcSet={posterSources.mobile} />
+          <source media="(max-width: 767px)" srcSet={imageSources.mobile} />
           <img
-            src={posterSources.desktop}
+            src={imageSources.desktop}
             alt={title}
             sizes="(min-width: 720px) 720px, 100vw"
             loading="lazy"

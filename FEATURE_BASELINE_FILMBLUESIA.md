@@ -17,7 +17,7 @@ This document is the current owner-approved baseline for the FilmBluesia fronten
 - Vercel serves pages, metadata JSON route handlers, static assets, manifest, robots, and sitemap.
 - OPhim metadata is fetched through server components and small `/api/ophim/*` JSON route handlers with conservative revalidation.
 - Movie posters and backdrops render with native `<img>`/`<picture>` tags. Remote movie art must not use `next/image` or Vercel `/_next/image`. Native `<img>` warnings are intentional.
-- The frontend may point movie poster/backdrop URLs at `https://img.bluesia.net` only through a URL builder/helper. It must not fetch, validate, transform, cache, or proxy image binaries inside Vercel.
+- The frontend may point movie poster/backdrop URLs at `https://img.bluesia.net` only through the server-only signed URL helper. It must not fetch, validate, transform, cache, or proxy image binaries inside Vercel.
 - `https://img.bluesia.net` is a separate VPS/Docker service. This repository must not implement Caddy, Dockge, Valkey, Docker image-cache workers, or image-cache infrastructure.
 - Video, HLS playlists, HLS chunks, iframe media, and embed media must never be routed through Vercel APIs or `img.bluesia.net`.
 - Favorites and history are browser-only through `localStorage`; there is no login, database, KV, R2, queue, cron, or server persistence.
@@ -120,15 +120,18 @@ Removed surfaces: `/api/image`, `/api/cache/status`, and `/api/cache/warmup`.
 ### F-12 External Image Cache
 
 - The image cache is external at `https://img.bluesia.net`.
-- Frontend URL contract: given an upstream HTTP(S) poster/backdrop URL, the frontend may generate image-cache URLs as `https://img.bluesia.net/i/m/<sha256>.webp?url=<encoded-normalized-upstream-url>` and `https://img.bluesia.net/i/d/<sha256>.webp?url=<encoded-normalized-upstream-url>`.
+- Frontend URL contract: given an allowed upstream HTTP(S) poster/backdrop URL from trusted server-side movie data, the frontend may generate image-cache URLs as `https://img.bluesia.net/i/m/<sha256>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>` and `https://img.bluesia.net/i/d/<sha256>.webp?url=<encoded-normalized-upstream-url>&sig=v1.<hmac-sha256-hex>`.
 - Only two variants are allowed: `m` for mobile and `d` for desktop.
 - `m` maps to VPS max width 480px and WebP quality 75.
 - `d` maps to VPS max width 960px and WebP quality 75.
 - The frontend must not send width, quality, DPR, format, AVIF, DPR variants, arbitrary width lists, or per-component transformation options.
 - The hash is SHA-256 hex of the normalized upstream image URL only. The variant must not be included in the hash.
-- Legacy `/image?url=` is VPS backward compatibility only. New frontend-generated URLs must not use it.
+- The HMAC payload is exactly `version + "\n" + variant + "\n" + hash + "\n" + normalizedUrl`.
+- `IMAGE_CACHE_SIGNING_SECRET` is server-only, must not use `NEXT_PUBLIC_`, and must not be imported by Client Components.
+- Signing is only invoked for trusted OPhim server-side movie data/API responses, never arbitrary client input.
+- Legacy `/image?url=` is VPS backward compatibility only, still requires signature, and new frontend-generated URLs must not use it.
 - The frontend must never send HLS/video/embed URLs to the image cache.
-- If `NEXT_PUBLIC_IMAGE_CACHE_URL` is unset, the frontend may fall back to direct upstream/CDN image URLs.
+- If `NEXT_PUBLIC_IMAGE_CACHE_URL` is unset, the frontend may fall back to direct upstream/CDN image URLs. If the signing secret is missing, unsigned `img.bluesia.net` URLs must not be generated.
 
 ### F-13 Vercel Cache And Quota Policy
 
@@ -141,7 +144,7 @@ Removed surfaces: `/api/image`, `/api/cache/status`, and `/api/cache/warmup`.
 ### F-14 Deployment
 
 - GitHub push triggers Vercel auto deploy.
-- Production environment: `NEXT_PUBLIC_SITE_URL=https://phim.bluesia.net`, `OPHIM_BASE_URL=https://ophim1.com`, `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net` when the external image cache is ready.
+- Production environment: `NEXT_PUBLIC_SITE_URL=https://phim.bluesia.net`, `OPHIM_BASE_URL=https://ophim1.com`, `NEXT_PUBLIC_IMAGE_CACHE_URL=https://img.bluesia.net`, `IMAGE_CACHE_SIGNING_SECRET`, and `IMAGE_SIGNATURE_VERSION=v1` when the external image cache is ready.
 - Existing Vidsrc/Vsembed env vars remain supported.
 - Docker files, if present, are non-Vercel artifacts and are not part of production frontend deployment.
 

@@ -1,9 +1,16 @@
+export type MovieImageSources = {
+  mobile: string;
+  desktop: string;
+};
+
 export type MovieCard = {
   name: string;
   originName?: string;
   slug: string;
   poster: string;
   thumb: string;
+  posterSources?: MovieImageSources;
+  thumbSources?: MovieImageSources;
   year?: number | string;
   quality?: string;
   lang?: string;

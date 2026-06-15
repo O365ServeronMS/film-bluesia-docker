@@ -4,7 +4,7 @@ import { KeyboardEvent, TouchEvent, useEffect, useMemo, useRef, useState } from 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Info, Play, Sparkles, Star } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
-import { getMovieImageSources } from "@/lib/images";
+import { getPreparedMovieImageSources } from "@/lib/images";
 import { baseSpotlightScore, normalizedLabelSet } from "@/lib/spotlight";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
@@ -141,7 +141,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
   const visibleIndex = activeIndex < slides.length ? activeIndex : 0;
   const active = slides[visibleIndex];
   const activeImage = active.thumb || active.poster;
-  const activeImageSources = getMovieImageSources(activeImage);
+  const activeImageSources = getPreparedMovieImageSources(active, activeImage);
   const isPersonalized = Boolean(personalData && (personalData.favorites.length || personalData.history.length));
   const canNavigate = slides.length > 1;
 

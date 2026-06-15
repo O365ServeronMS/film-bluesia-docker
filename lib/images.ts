@@ -1,23 +1,18 @@
-const IMAGE_CACHE_URL = (process.env.NEXT_PUBLIC_IMAGE_CACHE_URL || "").replace(/\/+$/, "");
 const FALLBACK_IMAGE_SRC = "/icon-512.png";
-const MEDIA_EXTENSIONS = /\.(m3u8|mpd|ts|m4s|mp4|mkv|avi|mov|webm|vtt|srt)(?:[?#].*)?$/i;
+const MEDIA_EXTENSIONS = /\.(m3u8|mpd|ts|m4s|mp4|mkv|avi|mov|webm|vtt|srt|svg)(?:[?#].*)?$/i;
 const HEX = "0123456789abcdef";
 
 export type ImageVariant = "m" | "d";
+export type MovieImageSources = { mobile: string; desktop: string };
+export type MovieImageCarrier = {
+  poster?: string | null;
+  thumb?: string | null;
+  posterSources?: MovieImageSources;
+  thumbSources?: MovieImageSources;
+};
 
 function isLocalAsset(src: string) {
   return src.startsWith("/") || src.startsWith("./") || src.startsWith("../");
-}
-
-function cacheHostnames() {
-  const hostnames = new Set(["img.bluesia.net"]);
-  if (!IMAGE_CACHE_URL) return hostnames;
-
-  try {
-    hostnames.add(new URL(IMAGE_CACHE_URL).hostname.toLowerCase());
-  } catch {}
-
-  return hostnames;
 }
 
 export function normalizeImageSourceUrl(src: string): string | null {
@@ -168,7 +163,7 @@ export function isMediaUrl(src: string): boolean {
   return MEDIA_EXTENSIONS.test(src.trim());
 }
 
-export function getCachedImageUrl(src: string | null | undefined, variant: ImageVariant): string {
+export function getClientSafeImageUrl(src: string | null | undefined): string {
   const direct = String(src || "").trim();
   if (!direct) return FALLBACK_IMAGE_SRC;
   if (isLocalAsset(direct) || direct.startsWith("data:") || direct.startsWith("blob:")) return direct;
@@ -176,22 +171,18 @@ export function getCachedImageUrl(src: string | null | undefined, variant: Image
 
   const normalized = normalizeImageSourceUrl(direct);
   if (!normalized) return FALLBACK_IMAGE_SRC;
-
-  try {
-    if (cacheHostnames().has(new URL(normalized).hostname.toLowerCase())) return normalized;
-  } catch {
-    return FALLBACK_IMAGE_SRC;
-  }
-
-  if (!IMAGE_CACHE_URL) return normalized;
-
-  const hash = sha256Hex(normalized);
-  return `${IMAGE_CACHE_URL}/i/${variant}/${hash}.webp?url=${encodeURIComponent(normalized)}`;
+  return normalized;
 }
 
 export function getMovieImageSources(src: string | null | undefined) {
   return {
-    mobile: getCachedImageUrl(src, "m"),
-    desktop: getCachedImageUrl(src, "d")
+    mobile: getClientSafeImageUrl(src),
+    desktop: getClientSafeImageUrl(src)
   };
+}
+
+export function getPreparedMovieImageSources(movie: MovieImageCarrier, src: string | null | undefined) {
+  if (src && src === movie.poster && movie.posterSources) return movie.posterSources;
+  if (src && src === movie.thumb && movie.thumbSources) return movie.thumbSources;
+  return getMovieImageSources(src);
 }

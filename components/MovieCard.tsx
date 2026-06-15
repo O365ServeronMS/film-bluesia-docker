@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Heart, Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import type { MovieCard as MovieCardType } from "@/lib/types";
-import { getMovieImageSources } from "@/lib/images";
+import { getPreparedMovieImageSources } from "@/lib/images";
 import { ratingLabel, withReturnTo } from "@/lib/utils";
 
 export function MovieCard({
@@ -21,7 +21,7 @@ export function MovieCard({
   returnTo?: string;
 }) {
   const image = movie.poster || movie.thumb;
-  const imageSources = getMovieImageSources(image);
+  const imageSources = getPreparedMovieImageSources(movie, image);
   const imageSizes = compact ? "(min-width: 720px) 168px, 31vw" : "(min-width: 720px) 240px, 50vw";
   const imageClassName = "h-full w-full object-cover transition duration-500 group-hover:scale-105";
   const Title = headingLevel === 2 ? "h2" : "h3";

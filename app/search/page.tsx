@@ -2,6 +2,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { MovieCard } from "@/components/MovieCard";
 import { SearchSuggest } from "@/components/SearchSuggest";
+import { withSignedListImages } from "@/lib/movie-images.server";
 import { searchMovies } from "@/lib/ophim";
 
 export const revalidate = 120;
@@ -13,7 +14,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const q = params.q || "";
   const page = Math.max(1, Number(params.page || "1"));
   const returnTo = q ? `/search?q=${encodeURIComponent(q)}${page > 1 ? `&page=${page}` : ""}` : "/search";
-  const data = q ? await searchMovies(q, page, 30) : { title: "Tìm kiếm", items: [], page };
+  const data = q ? withSignedListImages(await searchMovies(q, page, 30)) : { title: "Tìm kiếm", items: [], page };
 
   return (
     <>

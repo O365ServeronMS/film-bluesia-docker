@@ -6,7 +6,9 @@ import { ArrowLeft, ExternalLink, ListVideo } from "lucide-react";
 import { IframePlayerFacade } from "@/components/IframePlayerFacade";
 import { WatchRecorder } from "@/components/WatchRecorder";
 import { episodeWatchKey, findEpisodeByWatchKey } from "@/lib/episodes";
-import { getCachedImageUrl } from "@/lib/images";
+import { getPreparedMovieImageSources } from "@/lib/images";
+import { signImageCacheUrl } from "@/lib/image-signing.server";
+import { withSignedMovieDetailImages } from "@/lib/movie-images.server";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { siteUrl } from "@/lib/site";
 import { withReturnTo } from "@/lib/utils";
@@ -83,11 +85,11 @@ function movieDisplayTitle(movie: Awaited<ReturnType<typeof getMovie>>) {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   try {
     const params = await props.params;
-    const movie = await getMovie(params.slug);
+    const movie = withSignedMovieDetailImages(await getMovie(params.slug));
     const movieTitle = movieDisplayTitle(movie);
     const title = `Watching - ${movieTitle}`;
     const description = `Đang xem ${movieTitle} trên Bluesia Cinema`;
-    const image = getCachedImageUrl(movie.thumb || movie.poster || "/icon-512.png", "d");
+    const image = signImageCacheUrl(movie.thumb || movie.poster || "/icon-512.png", "d", { trustedOphimImage: true });
 
     return {
       title,
@@ -129,7 +131,7 @@ export default async function WatchPage(props: Props) {
   const searchParams = await props.searchParams;
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent") || "";
-  const movie = await getMovie(params.slug);
+  const movie = withSignedMovieDetailImages(await getMovie(params.slug));
   const serverIndex = Math.max(0, Number(searchParams?.server || "0"));
   const actualServerIndex = movie.episodes[serverIndex] ? serverIndex : 0;
   const server = movie.episodes[actualServerIndex] || movie.episodes[0];
@@ -145,6 +147,8 @@ export default async function WatchPage(props: Props) {
   const useEmbedPlayer = Boolean(playerEmbed) && (forceEmbed || (mobileUA && !forceHls));
   const returnTo = safeReturnPath(searchParams?.returnTo);
   const movieHref = withReturnTo(`/movie/${movie.slug}`, returnTo);
+  const poster = movie.thumb || movie.poster;
+  const posterSources = getPreparedMovieImageSources(movie, poster);
 
   return (
     <article className="min-h-screen bg-black">
@@ -173,11 +177,12 @@ export default async function WatchPage(props: Props) {
 
       <section className="aspect-video w-full bg-black">
         {!useEmbedPlayer && m3u8 ? (
-          <HlsVideo src={m3u8} poster={movie.thumb || movie.poster} />
+          <HlsVideo src={m3u8} poster={posterSources.desktop} />
         ) : playerEmbed ? (
           <IframePlayerFacade
             src={playerEmbed}
-            poster={movie.thumb || movie.poster}
+            poster={poster}
+            posterSources={posterSources}
             title={`${movie.name} - ${episode?.name || "Tập phim"}`}
           />
         ) : (

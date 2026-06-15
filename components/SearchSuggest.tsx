@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { getMovieImageSources } from "@/lib/images";
+import { getPreparedMovieImageSources } from "@/lib/images";
 import type { MovieCard } from "@/lib/types";
 
 type SearchSuggestProps = {
@@ -91,7 +91,7 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
 
   function renderSuggestion(movie: MovieCard) {
     const image = movie.poster || movie.thumb;
-    const imageSources = getMovieImageSources(image);
+    const imageSources = getPreparedMovieImageSources(movie, image);
 
     return (
       <button

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { getPreparedMovieImageSources } from "@/lib/images";
+import { currentReturnTo, hrefWithReturnTo } from "@/lib/navigation";
 import type { MovieCard } from "@/lib/types";
 
 type SearchSuggestProps = {
@@ -86,7 +87,8 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
 
   function openMovie(slug: string) {
     setOpen(false);
-    router.push("/movie/" + slug);
+    const returnTo = typeof window === "undefined" ? "/" : currentReturnTo(window.location.pathname, window.location.search);
+    router.push(hrefWithReturnTo("/movie/" + slug, returnTo));
   }
 
   function renderSuggestion(movie: MovieCard) {

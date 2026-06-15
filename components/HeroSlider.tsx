@@ -5,8 +5,9 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Info, Play, Sparkles, Star } from "lucide-react";
 import type { MovieCard } from "@/lib/types";
 import { getPreparedMovieImageSources } from "@/lib/images";
+import { hrefWithReturnTo } from "@/lib/navigation";
 import { baseSpotlightScore, normalizedLabelSet } from "@/lib/spotlight";
-import { ratingLabel, withReturnTo } from "@/lib/utils";
+import { ratingLabel } from "@/lib/utils";
 
 const SLIDE_INTERVAL_MS = 5000;
 const FAV_KEY = "phim.bluesia.net:favorites";
@@ -246,10 +247,10 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
           <h1 className="line-clamp-2 min-h-[4.5rem] max-w-[82%] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:max-w-[74%]">{active.name}</h1>
           <p className="mt-1 line-clamp-1 min-h-5 max-w-[86%] text-sm italic text-zinc-200 sm:max-w-[78%]">{active.originName || active.name} · {active.year || "N/A"}{active.country ? ` · ${active.country}` : ""}</p>
           <div className="mt-5 flex items-center gap-3">
-            <Link href={withReturnTo(`/watch/${active.slug}`, "/")} aria-label={`Xem phim ${active.name}`} className="grid h-16 w-16 place-items-center rounded-full bg-gold text-black shadow-glow transition hover:scale-105">
+            <Link href={hrefWithReturnTo(`/watch/${active.slug}`, "/", "home")} aria-label={`Xem phim ${active.name}`} className="grid h-16 w-16 place-items-center rounded-full bg-gold text-black shadow-glow transition hover:scale-105">
               <Play className="ml-1 h-8 w-8 fill-black" />
             </Link>
-            <Link href={withReturnTo(`/movie/${active.slug}`, "/")} aria-label={`Chi tiết phim ${active.name}`} className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
+            <Link href={hrefWithReturnTo(`/movie/${active.slug}`, "/", "home")} aria-label={`Chi tiết phim ${active.name}`} className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
               <Info className="h-7 w-7" />
             </Link>
           </div>

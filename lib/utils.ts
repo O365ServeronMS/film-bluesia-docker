@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { hrefWithReturnTo } from "@/lib/navigation";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,7 +30,5 @@ export function encodedReturnTo(path: string) {
 }
 
 export function withReturnTo(href: string, returnTo?: string) {
-  if (!returnTo) return href;
-  const separator = href.includes("?") ? "&" : "?";
-  return `${href}${separator}returnTo=${encodedReturnTo(returnTo)}`;
+  return hrefWithReturnTo(href, returnTo);
 }

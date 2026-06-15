@@ -123,6 +123,7 @@ Old `film.bluesia.net:*` and `bluesia:*` keys are intentionally not migrated.
 - Do not introduce hash-fragment navigation context.
 - Episode switching on watch pages should use replacement navigation.
 - Bottom nav active state should consider pathname and `returnTo`.
+- Navigation helpers live in `lib/navigation.ts` and implement the canonical FilmBluesia source/path contract. Movie/watch URL generation sanitizes legacy `?from=` and `#from=` inputs, validates `returnTo` as a same-origin internal path, and keeps watch back layered through movie detail before returning to the source list/search/home page.
 
 ## Removed Legacy Assumptions
 

@@ -9,9 +9,15 @@ import { episodeWatchKey, findEpisodeByWatchKey } from "@/lib/episodes";
 import { getPreparedMovieImageSources } from "@/lib/images";
 import { signImageCacheUrl } from "@/lib/image-signing.server";
 import { withSignedMovieDetailImages } from "@/lib/movie-images.server";
+import {
+  fallbackReturnToForSource,
+  hrefWithReturnTo,
+  inferNavSourceFromMovie,
+  navSourceFromSearchParams,
+  returnToFromSearchParams
+} from "@/lib/navigation";
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { siteUrl } from "@/lib/site";
-import { withReturnTo } from "@/lib/utils";
 
 const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod.HlsVideo), {
   loading: () => (
@@ -23,7 +29,7 @@ const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod
 
 export const revalidate = 300;
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string; player?: string; mirror?: string; returnTo?: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ server?: string; ep?: string; player?: string; mirror?: string; returnTo?: string; from?: string }> };
 
 const vidsrcHosts = new Set([
   "vsembed.ru",
@@ -64,16 +70,6 @@ function resolveEmbedUrl(src: string | undefined, options: { mobile: boolean; mi
     return url.toString();
   } catch {
     return src;
-  }
-}
-
-function safeReturnPath(value?: string) {
-  if (!value) return "";
-  try {
-    const decoded = decodeURIComponent(value);
-    return decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "";
-  } catch {
-    return value.startsWith("/") && !value.startsWith("//") ? value : "";
   }
 }
 
@@ -145,8 +141,9 @@ export default async function WatchPage(props: Props) {
   const mobileUA = isMobileUserAgent(userAgent);
   const playerEmbed = resolveEmbedUrl(embed, { mobile: mobileUA, mirror: searchParams?.mirror });
   const useEmbedPlayer = Boolean(playerEmbed) && (forceEmbed || (mobileUA && !forceHls));
-  const returnTo = safeReturnPath(searchParams?.returnTo);
-  const movieHref = withReturnTo(`/movie/${movie.slug}`, returnTo);
+  const navSourceKey = navSourceFromSearchParams(searchParams) || inferNavSourceFromMovie(movie);
+  const returnTo = returnToFromSearchParams(searchParams) || fallbackReturnToForSource(navSourceKey);
+  const movieHref = hrefWithReturnTo(`/movie/${movie.slug}`, returnTo, navSourceKey);
   const poster = movie.thumb || movie.poster;
   const posterSources = getPreparedMovieImageSources(movie, poster);
 
@@ -160,7 +157,7 @@ export default async function WatchPage(props: Props) {
       <link rel="dns-prefetch" href="https://vsembed.su" />
       <WatchRecorder movie={movie} />
       <header className="watch-header sticky top-0 z-40 flex items-center gap-3 border-b border-white/10 bg-black/90 px-3 py-2 backdrop-blur-xl">
-        <Link href={movieHref} aria-label={`Quay lại ${movie.name}`} className="watch-header-action grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
+        <Link href={movieHref} data-nav-back aria-label={`Quay lại ${movie.name}`} className="watch-header-action grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="watch-header-content min-w-0 flex-1">
@@ -200,7 +197,7 @@ export default async function WatchPage(props: Props) {
                 const currentKey = episode ? episodeWatchKey(episode, server?.serverData.indexOf(episode) ?? 0) : "";
                 const active = svIndex === actualServerIndex && (episodeWatchKey(ep, epIndex) === currentKey || epIndex === 0 && !epKey);
                 return (
-                  <Link key={`${ep.slug || ep.name}-${epIndex}`} replace href={withReturnTo(`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`, returnTo)} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
+                  <Link key={`${ep.slug || ep.name}-${epIndex}`} replace href={hrefWithReturnTo(`/watch/${movie.slug}?server=${svIndex}&ep=${encodeURIComponent(episodeWatchKey(ep, epIndex))}`, returnTo, navSourceKey)} className={active ? "rounded-xl bg-gold px-3 py-2 text-center text-xs font-black text-black" : "rounded-xl bg-white/10 px-3 py-2 text-center text-xs font-bold text-white transition hover:bg-white/15"}>
                     {ep.name || epIndex + 1}
                   </Link>
                 );

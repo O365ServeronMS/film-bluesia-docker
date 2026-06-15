@@ -3,7 +3,8 @@ import { Heart, Star } from "lucide-react";
 import { LazyImage } from "@/components/LazyImage";
 import type { MovieCard as MovieCardType } from "@/lib/types";
 import { getPreparedMovieImageSources } from "@/lib/images";
-import { ratingLabel, withReturnTo } from "@/lib/utils";
+import { hrefWithReturnTo } from "@/lib/navigation";
+import { ratingLabel } from "@/lib/utils";
 
 export function MovieCard({
   movie,
@@ -27,7 +28,7 @@ export function MovieCard({
   const Title = headingLevel === 2 ? "h2" : "h3";
 
   return (
-    <Link href={withReturnTo(`/movie/${movie.slug}`, returnTo)} className="group block min-w-0">
+    <Link href={hrefWithReturnTo(`/movie/${movie.slug}`, returnTo)} className="group block min-w-0">
       <article className="overflow-hidden rounded-2xl bg-card shadow-xl shadow-black/20 ring-1 ring-white/5 transition duration-300 group-hover:-translate-y-1 group-hover:ring-gold/50">
         <div className="relative aspect-[2/3] overflow-hidden bg-zinc-900">
           {image ? (

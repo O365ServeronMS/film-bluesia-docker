@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MovieCard } from "@/components/MovieCard";
 import { TopBar } from "@/components/TopBar";
 import { withSignedListImages } from "@/lib/movie-images.server";
+import { createReturnToPath } from "@/lib/navigation";
 import { getList } from "@/lib/ophim";
 
 export const revalidate = 1800;
@@ -62,7 +63,8 @@ export default async function ListPage(props: Props) {
   const data = withSignedListImages(await getList(params.type, page, 30, country, category));
   const pageNumbers = paginationPages(data.page || page, data.totalPages);
   const currentPage = data.page || page;
-  const currentReturnTo = listHref(params.type, currentPage, activeFilters);
+  const [returnPath, returnSearch = ""] = listHref(params.type, currentPage, activeFilters).split("?");
+  const currentReturnTo = createReturnToPath(returnPath, returnSearch ? `?${returnSearch}` : "");
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = data.totalPages ? currentPage < data.totalPages : true;
 

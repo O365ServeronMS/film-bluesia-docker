@@ -19,7 +19,7 @@ import {
 import { displayEpisodeServerName, getMovie } from "@/lib/ophim";
 import { siteUrl } from "@/lib/site";
 
-const HlsVideo = dynamic(() => import("@/components/HlsVideo").then((mod) => mod.HlsVideo), {
+const HlsPlayer = dynamic(() => import("@/components/HlsPlayer").then((mod) => mod.HlsPlayer), {
   loading: () => (
     <div className="grid h-full place-items-center bg-black p-6 text-center text-sm text-zinc-400">
       Đang tải trình phát video...
@@ -174,7 +174,7 @@ export default async function WatchPage(props: Props) {
 
       <section className="aspect-video w-full bg-black">
         {!useEmbedPlayer && m3u8 ? (
-          <HlsVideo src={m3u8} poster={posterSources.desktop} />
+          <HlsPlayer src={m3u8} poster={posterSources.desktop} />
         ) : playerEmbed ? (
           <IframePlayerFacade
             src={playerEmbed}

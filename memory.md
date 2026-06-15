@@ -94,9 +94,13 @@ Client search suggestions call `/api/ophim/search` with debounce. Do not pre-ren
 
 OPhim HLS:
 
-- uses client-side Artplayer/Hls.js or native HLS fallback
+- uses a lazy-loaded native `<video>` player plus `attachHls(video, src)`
+- uses `hls.js` on Android Chrome/Edge/Firefox/Samsung Internet and desktop Chrome/Edge/Firefox through `Hls.isSupported()`
+- prefers native HLS first on Safari for iOS, iPadOS, and macOS when `video.canPlayType("application/vnd.apple.mpegurl")` is supported
+- falls back to native HLS if supported, otherwise shows a clear unsupported-browser error
+- does not use Artplayer as the main HLS player; Artplayer is not a dependency unless a future non-HLS/embed source explicitly requires it
 - player bundle is lazy-loaded only on watch pages
-- buffering stays conservative
+- hls.js buffering is production-capped at 300 seconds forward, 60 seconds back buffer, and 120 MB max buffer size
 - stream URLs are never proxied through Vercel
 
 Vidsrc/Vsembed:

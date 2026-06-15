@@ -46,6 +46,8 @@ https://img.bluesia.net/i/d/<sha256-normalized-upstream-url>.webp?url=<encoded-n
 
 Video, HLS playlists, HLS chunks, iframe media, and embed media must not be proxied through Vercel or through `img.bluesia.net`.
 
+OPhim HLS playback is client-side only. Android and desktop Chromium/Firefox browsers use `hls.js` because they do not provide consistent native HLS playback; Safari on iOS/iPadOS/macOS uses native HLS first when the video element reports `application/vnd.apple.mpegurl` support. Browsers without `hls.js` support and without native HLS support receive an unsupported-browser message.
+
 Docker files remain only for non-Vercel workflows. Vercel auto deploy should not depend on Docker, Caddy, Dockge, Valkey, cron jobs, queues, databases, KV, R2, or cache warmers.
 
 ## Verification

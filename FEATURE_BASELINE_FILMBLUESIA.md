@@ -83,9 +83,13 @@ Removed surfaces: `/api/image`, `/api/cache/status`, and `/api/cache/warmup`.
 
 ### F-07 HLS Playback
 
-- OPhim HLS playback is client-side through lazy-loaded Artplayer/Hls.js or native HLS fallback.
+- OPhim HLS playback is client-side through a lazy-loaded native `<video>` player with reusable `attachHls(video, src)` setup.
+- Android Chrome/Edge/Firefox/Samsung Internet and desktop Chrome/Edge/Firefox use `hls.js` through `Hls.isSupported()` before native fallback.
+- Safari on iOS/iPadOS/macOS prefers native HLS first when `video.canPlayType("application/vnd.apple.mpegurl")` is supported.
+- Unsupported browsers show a clear HLS unsupported error after the final native-HLS fallback check.
+- Artplayer is not the main HLS player and must only be reintroduced for a documented non-HLS/embed source requirement.
 - Player code must not load on home/list/search/movie pages.
-- Default HLS buffering remains conservative and must not prefetch entire movies.
+- Default hls.js buffering uses a fixed production config capped at 300 seconds forward, 60 seconds back buffer, and 120 MB max buffer size; it must not prefetch entire movies.
 - Quality preference is stored locally at `bluesia-preferred-quality`.
 - Local subtitle upload supports `.srt`, `.vtt`, and `.ass`.
 

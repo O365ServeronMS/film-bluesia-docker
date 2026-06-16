@@ -60,6 +60,14 @@
 - Bottom nav is wrapped in a root-layout Suspense boundary because it reads search params and otherwise blocks static 404 prerendering in Next.js.
 - Added lightweight `app/robots.ts` and `app/sitemap.ts` for core routes only; dynamic movie/search pages are not mass-generated.
 
+## Shared Image Cache Invariant
+
+- `film.bluesia.net` (Astro/Cloudflare) and `phim.bluesia.net` (Next.js/Vercel) are two different frontends that MUST use the same external image cache service: `https://img.bluesia.net`.
+- The same movie image from the same normalized upstream URL MUST always produce exactly the same cache object, regardless of which frontend requests it, preventing cache duplication.
+- The cache key MUST be derived strictly from the normalized upstream image URL and the variant (`m` or `d`).
+- The cache key MUST NOT include requester site domain, frontend name, page route, movie slug, or specific frontend-generated query params like `profile=poster-desktop`, `profile=poster-mobile`, `width`, `quality`, `dpr`, `format`, or the signature value.
+- Both frontends must ensure their algorithms follow this same logic (normalize upstream URL -> compute SHA-256 -> select variant -> sign with shared secret).
+
 ## Removed Cloudflare-Only Assumptions
 
 - No Cloudflare KV/R2/Cache API is required.

@@ -1,4 +1,4 @@
-﻿# FilmBluesia Architecture Memory
+# FilmBluesia Architecture Memory
 
 This file records the current architecture for the FilmBluesia frontend repository.
 
@@ -51,6 +51,8 @@ VSEMBED_MOBILE_EMBED_HOST=vsembed.su
 ```
 
 ## Image Policy
+
+**Shared Image Cache Invariant:** Both `film.bluesia.net` and `phim.bluesia.net` MUST use exactly the same external image cache object for the same normalized upstream URL. The cache key MUST NOT include requester site domain, frontend name, page route, movie slug, or specific frontend-generated query params (like `width`, `profile`, `dpr`). The hash must be computed strictly from the normalized upstream URL to prevent cache duplication across frontends.
 
 Movie posters and backdrops are rendered with native `<img>` tags. This is deliberate: Vercel Image Optimization quota is exhausted and remote movie art must not create `/_next/image` transformations or cache writes.
 

@@ -78,8 +78,8 @@ export default async function MoviePage(props: Props) {
   const returnTo = returnToFromSearchParams(searchParams) || fallbackReturnToForSource(navSourceKey);
   const backHref = getSafeReturnTo(searchParams) || fallbackReturnToForSource(navSourceKey) || "/";
   const firstEp = movie.episodes[0]?.serverData[0];
-  const heroImage = movie.thumb || movie.poster;
-  const posterImage = movie.poster || movie.thumb;
+  const heroImage = movie.poster || movie.thumb;
+  const posterImage = movie.thumb || movie.poster;
   const heroImageSources = getPreparedMovieImageSources(movie, heroImage);
   const posterImageSources = getPreparedMovieImageSources(movie, posterImage);
 

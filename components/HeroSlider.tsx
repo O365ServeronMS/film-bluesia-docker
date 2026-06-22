@@ -141,7 +141,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
 
   const visibleIndex = activeIndex < slides.length ? activeIndex : 0;
   const active = slides[visibleIndex];
-  const activeImage = active.thumb || active.poster;
+  const activeImage = active.poster || active.thumb;
   const activeImageSources = getPreparedMovieImageSources(active, activeImage);
   const isPersonalized = Boolean(personalData && (personalData.favorites.length || personalData.history.length));
   const canNavigate = slides.length > 1;
@@ -189,7 +189,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
   return (
     <section className="px-4 pt-5">
       <div
-        className="relative h-[320px] overflow-hidden rounded-3xl bg-panel shadow-2xl shadow-black/30 ring-1 ring-white/5 sm:h-[360px]"
+        className="relative h-[580px] w-full overflow-hidden rounded-3xl bg-panel shadow-2xl shadow-black/30 ring-1 ring-white/5 sm:h-[600px]"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onTouchStart={handleTouchStart}
@@ -202,24 +202,20 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
             <source media="(max-width: 767px)" srcSet={activeImageSources.mobile} />
             <img
               src={activeImageSources.desktop}
-              sizes="(min-width: 720px) 688px, calc(100vw - 32px)"
               alt={active.name}
-              loading={visibleIndex === 0 ? "eager" : "lazy"}
-              fetchPriority={visibleIndex === 0 ? "high" : "auto"}
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover opacity-80 transition-opacity duration-700"
+              className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-40 transition-opacity duration-700"
             />
           </picture>
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07090f] via-[#07090f]/50 to-transparent" />
+        
         {canNavigate && (
           <>
             <button
               type="button"
               aria-label="Spotlight trước"
               onClick={() => moveSlide(-1)}
-              className="absolute left-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-gold/80 sm:grid"
+              className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-gold/80 sm:grid"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -227,14 +223,83 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
               type="button"
               aria-label="Spotlight tiếp theo"
               onClick={() => moveSlide(1)}
-              className="absolute right-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-gold/80 sm:grid"
+              className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 focus:outline-none focus:ring-2 focus:ring-gold/80 sm:grid"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
           </>
         )}
-        <div key={active.slug} className="relative z-10 flex h-full flex-col justify-end p-5 animate-[fadeIn_0.45s_ease-out]">
-          <div className="mb-3 flex min-h-8 flex-wrap content-end gap-2">
+
+        <div className="relative z-10 flex h-[65%] w-full items-center justify-center">
+          {slides.map((movie, index) => {
+            let offset = index - visibleIndex;
+            const half = Math.floor(slides.length / 2);
+            if (offset > half) offset -= slides.length;
+            if (offset < -half) offset += slides.length;
+
+            const isActive = offset === 0;
+            const isPrev = offset === -1;
+            const isNext = offset === 1;
+
+            let translateX = 0;
+            let scale = 0.67;
+            let opacity = 0;
+            const zIndex = 10 - Math.abs(offset);
+
+            if (isActive) {
+              translateX = 0;
+              scale = 1;
+              opacity = 1;
+            } else if (isPrev) {
+              translateX = -88;
+              opacity = 0.5;
+            } else if (isNext) {
+              translateX = 88;
+              opacity = 0.5;
+            } else {
+              translateX = offset < 0 ? -110 : 110;
+              opacity = 0;
+              scale = 0.5;
+            }
+
+            const slideImage = movie.poster || movie.thumb;
+            const slideImageSources = getPreparedMovieImageSources(movie, slideImage);
+
+            return (
+              <div
+                key={movie.slug}
+                className="absolute w-[70%] max-w-[500px] cursor-pointer transition-all duration-500 ease-out sm:w-[50%]"
+                style={{
+                  transform: `translateX(${translateX}%) scale(${scale})`,
+                  opacity,
+                  zIndex,
+                }}
+                onClick={() => chooseSlide(index)}
+                aria-hidden={!isActive}
+              >
+                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+                  {slideImage && (
+                    <picture>
+                      <source media="(max-width: 767px)" srcSet={slideImageSources.mobile} />
+                      <img
+                        src={slideImageSources.desktop}
+                        alt={movie.name}
+                        className="h-full w-full object-cover"
+                        loading={isActive ? "eager" : "lazy"}
+                        fetchPriority={isActive ? "high" : "auto"}
+                        decoding="async"
+                      />
+                    </picture>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 hover:opacity-100" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-8 z-20 flex flex-col items-center px-4 text-center">
+          <div className="mb-3 flex flex-wrap justify-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-md bg-white/15 px-2.5 py-1 text-xs font-black text-white backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-gold" /> {isPersonalized ? "Dành cho bạn" : "Smart Spotlight"}
             </span>
@@ -244,17 +309,17 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
               <Star className="h-3.5 w-3.5 fill-gold" /> {ratingLabel(active)}
             </span>
           </div>
-          <h1 className="line-clamp-2 min-h-[4.5rem] max-w-[82%] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:max-w-[74%]">{active.name}</h1>
-          <p className="mt-1 line-clamp-1 min-h-5 max-w-[86%] text-sm italic text-zinc-200 sm:max-w-[78%]">{active.originName || active.name} · {active.year || "N/A"}{active.country ? ` · ${active.country}` : ""}</p>
-          <div className="mt-5 flex items-center gap-3">
-            <Link href={hrefWithReturnTo(`/watch/${active.slug}`, "/", "home")} aria-label={`Xem phim ${active.name}`} className="grid h-16 w-16 place-items-center rounded-full bg-gold text-black shadow-glow transition hover:scale-105">
-              <Play className="ml-1 h-8 w-8 fill-black" />
+          <h1 className="line-clamp-2 max-w-[90%] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:text-4xl">{active.name}</h1>
+          <p className="mt-2 line-clamp-1 max-w-[85%] text-sm italic text-zinc-300">{active.originName || active.name} · {active.year || "N/A"}{active.country ? ` · ${active.country}` : ""}</p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <Link href={hrefWithReturnTo(`/watch/${active.slug}`, "/", "home")} aria-label={`Xem phim ${active.name}`} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gold px-6 py-3.5 text-[15px] font-black text-black shadow-glow transition hover:scale-105">
+              <Play className="h-5 w-5 fill-black" /> Xem ngay
             </Link>
-            <Link href={hrefWithReturnTo(`/movie/${active.slug}`, "/", "home")} aria-label={`Chi tiết phim ${active.name}`} className="grid h-14 w-14 place-items-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
-              <Info className="h-7 w-7" />
+            <Link href={hrefWithReturnTo(`/movie/${active.slug}`, "/", "home")} aria-label={`Chi tiết phim ${active.name}`} className="grid h-[52px] w-[52px] place-items-center rounded-2xl bg-white/20 text-white backdrop-blur transition hover:bg-white/25">
+              <Info className="h-6 w-6" />
             </Link>
           </div>
-          <div className="mt-5 flex items-center justify-center gap-1">
+          <div className="mt-6 flex items-center justify-center gap-1.5">
             {slides.map((movie, index) => (
               <button
                 key={movie.slug}
@@ -264,7 +329,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
                 className="grid h-6 min-w-6 place-items-center rounded-full transition"
               >
                 <span
-                  className={index === visibleIndex ? "h-2.5 w-10 rounded-full bg-gold transition-all" : "h-2.5 w-2.5 rounded-full bg-white/40 transition-all hover:bg-white"}
+                  className={index === visibleIndex ? "h-2 w-8 rounded-full bg-gold transition-all" : "h-2 w-2 rounded-full bg-white/40 transition-all hover:bg-white"}
                 />
               </button>
             ))}

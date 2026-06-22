@@ -21,7 +21,7 @@ export function MovieCard({
   priority?: boolean;
   returnTo?: string;
 }) {
-  const image = movie.poster || movie.thumb;
+  const image = movie.thumb || movie.poster;
   const imageSources = getPreparedMovieImageSources(movie, image);
   const imageSizes = compact ? "(min-width: 720px) 168px, 31vw" : "(min-width: 720px) 240px, 50vw";
   const imageClassName = "h-full w-full object-cover transition duration-500 group-hover:scale-105";

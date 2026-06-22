@@ -245,6 +245,11 @@ export async function getList(type: string, page = 1, limit = 24, country?: stri
 
   const { items, cdn, data } = getItems(payload);
   const pagination = data?.params?.pagination || data?.pagination || payload?.pagination || {};
+  
+  const totalItems = Number(pagination?.totalItems || pagination?.total_items || 0);
+  const itemsPerPage = Number(pagination?.totalItemsPerPage || pagination?.total_items_per_page || safeLimit);
+  const computedTotalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
+
   const titleParts = [listLabels[type] || "Danh sách phim"];
   if (countrySlug) titleParts.push(countryLabels[countrySlug]);
   if (categorySlug) titleParts.push(categoryLabels[categorySlug]);
@@ -253,7 +258,7 @@ export async function getList(type: string, page = 1, limit = 24, country?: stri
     title: titleParts.join(" - "),
     items: visibleListCards(items.map((item) => normalizeCard(item, cdn))),
     page: Number(pagination?.currentPage || safePage),
-    totalPages: Number(pagination?.totalPages || pagination?.total_pages || 0) || undefined
+    totalPages: Number(pagination?.totalPages || pagination?.total_pages) || computedTotalPages
   };
 }
 
@@ -265,11 +270,16 @@ export async function searchMovies(keyword: string, page = 1, limit = 24): Promi
   const payload = await fetchJson<SourceListPayload>(`/v1/api/tim-kiem?keyword=${encodeURIComponent(q)}&page=${safePage}&limit=${safeLimit}`, SEARCH_REVALIDATE_SECONDS);
   const { items, cdn, data } = getItems(payload);
   const pagination = data?.params?.pagination || {};
+  
+  const totalItems = Number(pagination?.totalItems || pagination?.total_items || 0);
+  const itemsPerPage = Number(pagination?.totalItemsPerPage || pagination?.total_items_per_page || safeLimit);
+  const computedTotalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
+
   return {
     title: `Tìm kiếm: ${q}`,
     items: items.map((item) => normalizeCard(item, cdn)).filter((item: MovieCard) => item.slug),
     page: Number(pagination?.currentPage || safePage),
-    totalPages: Number(pagination?.totalPages || 0) || undefined
+    totalPages: Number(pagination?.totalPages || pagination?.total_pages) || computedTotalPages
   };
 }
 

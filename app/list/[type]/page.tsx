@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MovieCard } from "@/components/MovieCard";
+import { Pagination } from "@/components/Pagination";
 import { TopBar } from "@/components/TopBar";
 import { withSignedListImages } from "@/lib/movie-images.server";
 import { createReturnToPath } from "@/lib/navigation";
@@ -24,7 +24,6 @@ const quickCategories = [
 
 const countryFilterableTypes = new Set(["phim-le", "phim-bo", "tv-shows"]);
 const categoryFilterableTypes = new Set(["phim-le"]);
-const PAGE_GROUP_SIZE = 10;
 
 function normalizeCountry(country?: string) {
   const slug = String(country || "").trim().toLowerCase();
@@ -43,14 +42,6 @@ function listHref(type: string, page: number, filters?: { country?: string; cate
   return `/list/${type}?${query.toString()}`;
 }
 
-function paginationPages(currentPage: number, totalPages?: number) {
-  const groupStart = Math.floor((Math.max(1, currentPage) - 1) / PAGE_GROUP_SIZE) * PAGE_GROUP_SIZE + 1;
-  const hardEnd = groupStart + PAGE_GROUP_SIZE - 1;
-  const groupEnd = totalPages ? Math.min(hardEnd, totalPages) : hardEnd;
-
-  return Array.from({ length: Math.max(0, groupEnd - groupStart + 1) }, (_, index) => groupStart + index);
-}
-
 export default async function ListPage(props: Props) {
   const params = await props.params;
   const searchParams = await props.searchParams;
@@ -61,12 +52,9 @@ export default async function ListPage(props: Props) {
   const category = supportsCategoryFilter ? normalizeCategory(searchParams?.category) : "";
   const activeFilters = { country, category };
   const data = withSignedListImages(await getList(params.type, page, 30, country, category));
-  const pageNumbers = paginationPages(data.page || page, data.totalPages);
   const currentPage = data.page || page;
   const [returnPath, returnSearch = ""] = listHref(params.type, currentPage, activeFilters).split("?");
   const currentReturnTo = createReturnToPath(returnPath, returnSearch ? `?${returnSearch}` : "");
-  const hasPreviousPage = currentPage > 1;
-  const hasNextPage = data.totalPages ? currentPage < data.totalPages : true;
 
   return (
     <>
@@ -140,46 +128,12 @@ export default async function ListPage(props: Props) {
         ))}
       </section>
 
-      <nav className="px-4 pt-8" aria-label="Phân trang">
-        <div className="flex items-center justify-between gap-3">
-          <Link
-            href={listHref(params.type, Math.max(1, currentPage - 1), activeFilters)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold text-white ring-1 ring-white/10 aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            aria-disabled={!hasPreviousPage}
-          >
-            <ChevronLeft className="h-4 w-4" /> Trang trước
-          </Link>
-
-          <Link
-            href={listHref(params.type, currentPage + 1, activeFilters)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gold px-4 py-3 text-sm font-black text-black aria-disabled:pointer-events-none aria-disabled:opacity-40"
-            aria-disabled={!hasNextPage}
-          >
-            Trang sau <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {pageNumbers.map((pageNumber) => {
-            const active = pageNumber === currentPage;
-
-            return (
-              <Link
-                key={pageNumber}
-                href={listHref(params.type, pageNumber, activeFilters)}
-                aria-current={active ? "page" : undefined}
-                className={`grid h-11 min-w-11 place-items-center rounded-2xl px-3 text-sm font-black ring-1 transition ${
-                  active
-                    ? "bg-gold text-black ring-gold shadow-glow"
-                    : "bg-white/10 text-zinc-200 ring-white/10 hover:bg-white/15 hover:text-white"
-                }`}
-              >
-                {pageNumber}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={data.totalPages || 1}
+        basePath={`/list/${params.type}`}
+        searchParams={searchParams}
+      />
     </>
   );
 }

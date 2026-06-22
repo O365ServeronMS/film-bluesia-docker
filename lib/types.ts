@@ -135,6 +135,10 @@ export type SourcePagination = {
   currentPage?: number | string;
   totalPages?: number | string;
   total_pages?: number | string;
+  totalItems?: number | string;
+  total_items?: number | string;
+  totalItemsPerPage?: number | string;
+  total_items_per_page?: number | string;
 };
 
 export type SourceListData = {

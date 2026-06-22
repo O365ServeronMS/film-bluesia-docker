@@ -262,13 +262,13 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
               scale = 0.5;
             }
 
-            const slideImage = movie.poster || movie.thumb;
+            const slideImage = movie.thumb || movie.poster;
             const slideImageSources = getPreparedMovieImageSources(movie, slideImage);
 
             return (
               <div
                 key={movie.slug}
-                className="absolute w-[70%] max-w-[500px] cursor-pointer transition-all duration-500 ease-out sm:w-[50%]"
+                className="absolute w-[50%] max-w-[260px] cursor-pointer transition-all duration-500 ease-out sm:w-[30%] sm:max-w-[280px]"
                 style={{
                   transform: `translateX(${translateX}%) scale(${scale})`,
                   opacity,
@@ -277,7 +277,7 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
                 onClick={() => chooseSlide(index)}
                 aria-hidden={!isActive}
               >
-                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
                   {slideImage && (
                     <picture>
                       <source media="(max-width: 767px)" srcSet={slideImageSources.mobile} />

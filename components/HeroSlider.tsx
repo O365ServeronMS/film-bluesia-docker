@@ -305,8 +305,8 @@ export function HeroSlider({ items }: { items: MovieCard[] }) {
             </span>
             <span className="rounded-md bg-gold px-2.5 py-1 text-xs font-black text-black">{active.episodeCurrent || "FULL"}</span>
             {active.quality && <span className="rounded-md bg-white/20 px-2.5 py-1 text-xs font-bold text-white backdrop-blur">{active.quality}</span>}
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2.5 py-1 text-xs font-bold text-gold backdrop-blur">
-              <Star className="h-3.5 w-3.5 fill-gold" /> {ratingLabel(active)}
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-bold text-gold backdrop-blur">
+              <Star className="h-3 w-3 fill-gold" /> {ratingLabel(active)}
             </span>
           </div>
           <h1 className="line-clamp-2 max-w-[90%] text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg sm:text-4xl">{active.name}</h1>

@@ -124,8 +124,8 @@ export default async function MoviePage(props: Props) {
               ) : null}
             </div>
             <div className="min-w-0 flex-1 pt-4">
-              <div className="mb-3 inline-flex items-center gap-1 rounded-lg bg-black/50 px-2.5 py-1 text-xs font-bold text-gold backdrop-blur">
-                <Star className="h-3.5 w-3.5 fill-gold" /> {ratingLabel(movie)}
+              <div className="mb-3 inline-flex items-center gap-1 rounded bg-black/50 px-2 py-0.5 text-[11px] font-bold text-gold backdrop-blur">
+                <Star className="h-3 w-3 fill-gold" /> {ratingLabel(movie)}
               </div>
               <h1 className="text-3xl font-black leading-tight tracking-tight">{movie.name}</h1>
               <p className="mt-2 line-clamp-2 text-sm italic text-zinc-300">{movie.originName}</p>

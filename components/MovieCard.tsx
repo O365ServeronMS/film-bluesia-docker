@@ -58,8 +58,8 @@ export function MovieCard({
             <div className="grid h-full place-items-center px-4 text-center text-sm text-zinc-500">Không có ảnh</div>
           )}
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2">
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-[11px] font-bold text-gold backdrop-blur">
-              <Star className="h-3 w-3 fill-gold" /> {ratingLabel(movie)}
+            <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold text-gold backdrop-blur bg-black/70">
+              <Star className="h-2.5 w-2.5 fill-gold" /> {ratingLabel(movie)}
             </span>
             <span className="grid h-8 w-8 place-items-center rounded-full bg-black/60 text-white backdrop-blur">
               <Heart className="h-4 w-4" />

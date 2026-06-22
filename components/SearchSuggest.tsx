@@ -92,7 +92,7 @@ export function SearchSuggest({ initialQuery = "", autoFocus = false }: SearchSu
   }
 
   function renderSuggestion(movie: MovieCard) {
-    const image = movie.poster || movie.thumb;
+    const image = movie.thumb || movie.poster;
     const imageSources = getPreparedMovieImageSources(movie, image);
 
     return (
